@@ -1,0 +1,97 @@
+** change this for different doe runs
+*INCLUDE, INPUT=../doe_params/eta_params_run01.inp
+*HEADING
+** Step 2A: working electromechanics model + imported geometry + imported triad field
+** TEMP = phi
+** PREDEF(1) = fibrosis field m
+** PREDEF(2:4) = e_r
+** PREDEF(5:7) = e_theta
+** PREDEF(8:10) = e_z
+** Imported triad is used as the Step 2 reference basis
+*PREPRINT, ECHO=YES, MODEL=YES, HISTORY=YES
+*IMPORT, STEP=1, UPDATE=YES, STATE=NO
+ILEUM
+*IMPORT ELSET
+ILEUM
+*IMPORT NSET
+ALL_NODES
+PROXIMAL_FACE
+DISTAL_FACE
+FACEX
+FACEY
+INNER_SURFACE
+*INCLUDE, INPUT=triad_fields.inp
+*MATERIAL, NAME=SMCICC
+*DENSITY
+1.0
+*DEPVAR
+12
+** 1  W
+** 2  TACT
+** 3  PHI_SMC
+** 4  I4_CIRC
+** 5  I4_LONG
+** 6  M_IMPORTED
+** 7  ECIRC_REF_X
+** 8  ECIRC_REF_Y
+** 9  ECIRC_REF_Z
+** 10 ER_X
+** 11 ER_Y
+** 12 ER_Z
+*USER MATERIAL, TYPE=MECHANICAL, CONSTANTS=20,UNSYMM
+7.0, 0.5, 8.0, 0.5, -60.0, 13.0, 7.8, -40.0,
+0.6, 2.0, 0.5, 0.64, 0.15, -0.00004, 210, 1900,
+0.104, <eta_mu>, <eta_T>, <eta_a>
+** 1  KAPPA_FHN
+** 2  A0_FHN
+** 3  B_FHN
+** 4  C_FHN
+** 5  PHI_R
+** 6  PHI_OFFSET
+** 7  A_SW0
+** 8  PHI_TH
+** 9  DELTA_S
+** 10 T0
+** 11 TAU_T
+** 12 MU0
+** 13 EPSILON_0
+** 14 EPSILON_Z
+** 15 KF_CIRC
+** 16 KF_LONG
+** 17 EPSILON_LAMBDA
+** 18 ETA_MU
+** 19 ETA_T
+** 20 ETA_A
+*USER MATERIAL, TYPE=THERMAL, CONSTANTS=4
+1.0, 20.0, 0.0, <eta_D>
+** 1 C_PHI
+** 2 D0
+** 3 (unused)
+** 4 ETA_D
+*SOLID SECTION, ELSET=ILEUM, MATERIAL=SMCICC
+*INITIAL CONDITIONS, TYPE=TEMPERATURE
+ALL_NODES, 0.0
+*INITIAL CONDITIONS, TYPE=SOLUTION
+ILEUM, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+0.0, 0.0, 0.0, 0.0, 0.0
+*STEP, NLGEOM=YES, INC=100000
+*COUPLED TEMPERATURE-DISPLACEMENT
+0.10, 180.0, 1.0E-06, 0.10
+*Controls, parameters=time incrementation
+, , , , , , , 10, , , , ,
+*BOUNDARY
+PROXIMAL_FACE, 3, 3, 0.0
+DISTAL_FACE, 3, 3, 0.0
+FACEX, 1, 1, 0.0
+FACEY, 2, 2, 0.0
+*OUTPUT, FIELD, TIME INTERVAL=0.10
+*NODE OUTPUT, NSET=ALL_NODES
+U, NT
+*NODE OUTPUT, NSET=INNER_SURFACE
+COORD
+*ELEMENT OUTPUT, ELSET=ILEUM
+S, HFL, FV, SDV
+*OUTPUT, HISTORY, TIME INTERVAL=0.10
+*NODE OUTPUT, NSET=INNER_SURFACE
+U
+*END STEP
