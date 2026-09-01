@@ -1,0 +1,4 @@
+# Commands used after running the Abaqus jobs.
+abaqus python export_triad_fields.py --odb m1.odb --out triad_fields.inp
+abaqus viewer noGUI=motility_from_cross_sections.py
+

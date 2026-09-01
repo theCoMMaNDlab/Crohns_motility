@@ -1,0 +1,58 @@
+** Model 1 Abaqus input deck: fibrosis growth job.
+** UNITS: Length - mm, Time - s, Stress - kPa
+*HEADING
+** Run 1: coupled fibrosis-growth job
+** NT = fibrosis field m
+** UMATHT solves logistic/KPP-type fibrosis field
+** UMAT uses m directly to evolve radial growth
+** local 1 = radial
+** local 2 = circumferential
+** local 3 = longitudinal
+** mesh.inp must use C3D8T elements
+*PREPRINT, ECHO=YES, MODEL=YES, HISTORY=YES
+*INCLUDE, INPUT=mesh.inp
+*ORIENTATION, NAME=CYL, SYSTEM=CYLINDRICAL
+0., 0., 0., 0., 0., 1.
+*MATERIAL, NAME=MAT_ILEUM
+*DENSITY
+1.0
+*DEPVAR
+1
+** 1 THETA_H : Radial growth multiplier theta_h (-)
+*USER MATERIAL, TYPE=MECHANICAL, CONSTANTS=6, UNSYMM
+0.64, 210.0, 1900.0, 0.69, 100.0, 1.0
+** PROPS (MECHANICAL):
+** 1 MU0          : Initial shear modulus mu_0 (kPa)
+** 2 KF_CIRC      : Circumferential fiber stiffness k_f,c (kPa)
+** 3 KF_LONG      : Longitudinal fiber stiffness k_f,l (kPa)
+** 4 GAMMA_G      : Growth rate parameter gamma_g (1/s)
+** 5 KAPPA_FACTOR : Bulk-to-shear modulus ratio kappa_fac (-)
+** 6 S0           : Logistic source rate s_0, returned in RPL (1/s)
+*USER MATERIAL, TYPE=THERMAL, CONSTANTS=2
+1.0, 1.0
+** PROPS (THERMAL):
+** 1 C_M : Temporal scaling parameter c_m (-)
+** 2 D_M : Fibrosis diffusivity D_m (mm^2/s)
+*SOLID SECTION, ELSET=ILEUM, MATERIAL=MAT_ILEUM, ORIENTATION=CYL
+*INITIAL CONDITIONS, TYPE=TEMPERATURE
+ALL_NODES, 0.0
+*INITIAL CONDITIONS, TYPE=SOLUTION
+ILEUM, 1.0
+*STEP, NLGEOM=YES, INC=200000
+*COUPLED TEMPERATURE-DISPLACEMENT
+0.02, 1.0, 1.0E-08, 0.10
+*Controls, parameters=time incrementation
+, , , , , , , 10, , , , ,
+*BOUNDARY
+FIBROTIC_SEED, 11, 11, 1.0
+PROXIMAL_FACE, 3, 3, 0.0
+DISTAL_FACE, 3, 3, 0.0
+FACEX, 1, 1, 0.0
+FACEY, 2, 2, 0.0
+*Restart, write, frequency=1
+*OUTPUT, FIELD, TIME INTERVAL=0.05
+*NODE OUTPUT, NSET=ALL_NODES
+COORD, U, RF, NT
+*ELEMENT OUTPUT, ELSET=ILEUM
+S, HFL, SDV
+*END STEP
