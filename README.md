@@ -26,10 +26,12 @@ The temperature DOF is used as a surrogate scalar field in both models to solve 
 ├── sub1.f                        # UMAT/UMATHT for Model 1 (growth)
 ├── sub2.f                        # UMAT/UMATHT for Model 2 (electromechanics)
 ├── export_triad_fields.py        # Exports fibrosis field + fibre triad from m1.odb
-├── triad_fields.inp              # Generated: predefined field include for Model 2
+├── triad_fields.inp              # Generated: predefined field for Model 2
 ├── motility_from_cross_sections.py  # Computes lumen volume from m2.odb
-├── motility_metric.py            # Computes motility metric (STD/mean) and plots
+├── motility_metric.py            # Computes the motility metric 
 ├── motility_volume_cross_sections.csv  # Generated: volume vs time output
+├── generate_doe.py               # Defines the DOE parameters and the run table
+├── run_doe.py                    # DOE driver: runs the workflow for every combination
 └── commands.txt                  # Quick reference for run commands
 ```
 
@@ -38,7 +40,7 @@ The temperature DOF is used as a surrogate scalar field in both models to solve 
 ## Prerequisites
 
 - Abaqus 2024 or above (also used to run `export_triad_fields.py` and `motility_from_cross_sections.py` via `abaqus python` / `abaqus viewer`)
-- Python 3.8+ with `numpy` and `matplotlib`, for the standalone post-processing script `motility_metric.py`
+- Python 3.8+ with `numpy`, for the standalone post-processing script `motility_metric.py`
 ---
 
 ## Workflow
@@ -75,7 +77,7 @@ This reads the last frame of `m1.odb` and writes `triad_fields.inp` containing 1
 abaqus job=m2 oldjob=m1 input=m2.inp user=sub2.f cpus=4 interactive
 ```
 
-Model 2 imports the grown geometry from Model 1 and reads `triad_fields.inp` as predefined fields. Outputs: `m2.odb`.
+Model 2 imports the grown geometry from Model 1 and reads `triad_fields.inp` as predefined fields. Outputs: `m2.odb`. The `*PARAMETER` block at the top of `m2.inp` sets `eta_D`/`eta_a`/`eta_T`/`eta_mu` for this run (baseline = 0.0) — edit those values directly for a manual run at a different disease level.
 
 ---
 
@@ -102,13 +104,35 @@ python motility_metric.py
 Reads `motility_volume_cross_sections.csv` and computes:
 
 - Dominant contraction period (FFT)
-- Last complete contraction cycle (peak detection)
-- **Motility metric** = STD(volume) / mean(volume) over the last cycle
+- Last complete contraction cycle (valley detection)
+- **Motility metric** MM = STD(volume) over the last cycle
 
-Prints metrics to console and plots lumen volume vs time with the analysis window highlighted.
+Prints the motility metric and the cycle duration to the console.
 
 ---
 
+## Automated DOE
+
+`run_doe.py` orchestrates the five manual steps above for all 32 DOE
+combinations (`eta_D`, `eta_a`, `eta_T`, `eta_mu`,`gamma_h`) 
+at two levels each. It does not change the models; it runs the
+same commands per case and writes the final table to `DOE_MM_results.txt`.
+
+Model 1 is run twice, once per `gamma_h` level, into
+`doe_work/model_1/baseline` and `doe_work/model_1/fibrotic` (deformed). 
+Each reference state is shared by the 16 cases that use it, and
+Model 2 runs once per case in `doe_work/runs/runNN`.
+
+```bash
+python3 run_doe.py --cpus 8
+```
+
+Run `python3 run_doe.py --help` for options (`--jobs` for concurrent cases,
+`--dry-run`, `--only`, `--results-only`, etc.). Each case's `*PARAMETER`
+values come from `generate_doe.py`'s factor table and are written straight
+into that case's own `eta_params.inp` — nothing is read from disk first.
+
+---
 
 ## Notes
 

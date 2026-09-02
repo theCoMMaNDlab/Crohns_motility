@@ -29,7 +29,7 @@
 ** 5 KAPPA_FACTOR : Bulk-to-shear modulus ratio kappa_fac (-)
 ** 6 S0           : Logistic source rate s_0, returned in RPL (1/s)
 *USER MATERIAL, TYPE=THERMAL, CONSTANTS=2
-1.0, 1.0
+1.0, 20.0
 ** PROPS (THERMAL):
 ** 1 C_M : Temporal scaling parameter c_m (-)
 ** 2 D_M : Fibrosis diffusivity D_m (mm^2/s)

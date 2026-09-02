@@ -1,5 +1,10 @@
-** change this for different doe runs
-*INCLUDE, INPUT=../doe_params/eta_params_run01.inp
+** Baseline eta values for a manual (non-DOE) run.  run_doe.py replaces
+** this block with an *INCLUDE of the case's own eta_params.inp.
+*PARAMETER
+eta_D  = 0.0
+eta_a  = 0.0
+eta_T  = 0.0
+eta_mu = 0.0
 *HEADING
 ** Step 2A: working electromechanics model + imported geometry + imported triad field
 ** TEMP = phi
@@ -62,12 +67,11 @@ INNER_SURFACE
 ** 18 ETA_MU
 ** 19 ETA_T
 ** 20 ETA_A
-*USER MATERIAL, TYPE=THERMAL, CONSTANTS=4
-1.0, 20.0, 0.0, <eta_D>
+*USER MATERIAL, TYPE=THERMAL, CONSTANTS=3
+1.0, 20.0, <eta_D>
 ** 1 C_PHI
 ** 2 D0
-** 3 (unused)
-** 4 ETA_D
+** 3 ETA_D
 *SOLID SECTION, ELSET=ILEUM, MATERIAL=SMCICC
 *INITIAL CONDITIONS, TYPE=TEMPERATURE
 ALL_NODES, 0.0

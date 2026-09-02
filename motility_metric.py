@@ -1,237 +1,245 @@
-# motility_metric.py
-#
-# Computes the manuscript motility metric
-#     MM = sigma_V / V_bar
-# over the last complete contraction cycle of V(t).
+# report_motility_metrics.py
 
 import csv
 import numpy as np
-import matplotlib.pyplot as plt
 
 CSV_IN = 'motility_volume_cross_sections.csv'
-TXT_OUT = 'cycle_volume.txt'
 
 MIN_PERIOD_FACTOR = 0.6
 MAX_PERIOD_FACTOR = 1.4
 END_WINDOW_PERIODS = 1.5
 
-# The final cycle is searched near the end of the simulation over this
-# many dominant periods, then paired with the preceding compatible peak.
+# Number of equally spaced points used to calculate MM
+N_METRIC_POINTS = 1000
 
 
 # ----------------------------------------------------------------------
 # Helpers
 # ----------------------------------------------------------------------
 
-def local_maxima(values):
-    """Return indices of local maxima in a raw signal."""
-    maxima_indices = []
-    index = 1
-    while index < len(values) - 1:
-        is_local_maximum = (
-            values[index] >= values[index - 1]
-            and values[index] >= values[index + 1]
-            and (
-                values[index] > values[index - 1]
-                or values[index] > values[index + 1]
-            )
-        )
-        if is_local_maximum:
-            maxima_indices.append(index)
-        index += 1
-    return maxima_indices
+def local_minima(vals):
+    idx = []
+    i = 1
+
+    while i < len(vals) - 1:
+        if vals[i] <= vals[i - 1] and vals[i] <= vals[i + 1] and (
+            vals[i] < vals[i - 1] or vals[i] < vals[i + 1]
+        ):
+            idx.append(i)
+
+        i += 1
+
+    return idx
 
 
 # ----------------------------------------------------------------------
-# Read V(t)
+# Read CSV
 # ----------------------------------------------------------------------
 
-time_values = []
-volume_values = []
+time = []
+volume = []
 
-with open(CSV_IN, 'r') as csv_file:
-    reader = csv.DictReader(csv_file)
+with open(CSV_IN, 'r') as f:
+    reader = csv.DictReader(f)
+
     for row in reader:
-        time_values.append(float(row['time']))
-        volume_values.append(float(row['volume']))
+        time.append(float(row['time']))
+        volume.append(float(row['volume']))
 
-if len(time_values) < 10:
+if len(time) < 10:
     raise RuntimeError('Not enough data points in %s' % CSV_IN)
 
-# ----------------------------------------------------------------------
-# Full-signal summary metrics
-# ----------------------------------------------------------------------
-
-mean_volume_full = np.mean(volume_values)
-std_volume_full = np.std(volume_values, ddof=0)
-volume_min_full = min(volume_values)
-volume_max_full = max(volume_values)
-peak_to_peak_full = volume_max_full - volume_min_full
 
 # ----------------------------------------------------------------------
-# Dominant contraction period from FFT
+# Convert to arrays
 # ----------------------------------------------------------------------
 
-delta_t = time_values[1] - time_values[0]
-volume_signal = np.array(volume_values, dtype=float)
-volume_signal = volume_signal - np.mean(volume_signal)
+time = np.array(time, dtype=float)
+volume = np.array(volume, dtype=float)
 
-frequencies = np.fft.rfftfreq(len(volume_signal), d=delta_t)
-fft_amplitudes = np.abs(np.fft.rfft(volume_signal))
-
-
-# Ignore the zero-frequency component and identify the dominant nonzero
-# frequency of the volume signal.
-dominant_frequency_index = np.argmax(fft_amplitudes[1:]) + 1
-dominant_frequency = frequencies[dominant_frequency_index]
-dominant_period = 1.0 / dominant_frequency
 
 # ----------------------------------------------------------------------
-# Last complete cycle by peak detection
+# Check that time is increasing
 # ----------------------------------------------------------------------
 
-peak_indices = local_maxima(volume_values)
-
-if len(peak_indices) < 2:
-    raise RuntimeError('Could not find enough peaks')
-
-end_time_threshold = time_values[-1] - END_WINDOW_PERIODS * dominant_period
-
-candidate_end_peaks = [
-    peak_index for peak_index in peak_indices
-    if time_values[peak_index] >= end_time_threshold
-]
-if not candidate_end_peaks:
-    candidate_end_peaks = peak_indices
+if np.any(np.diff(time) <= 0):
+    raise RuntimeError('Time values must be strictly increasing')
 
 
-# Use the largest nearby peak as the end of the final representative cycle.
-cycle_end_index = max(
-    candidate_end_peaks,
-    key=lambda peak_index: volume_values[peak_index]
+# ----------------------------------------------------------------------
+# Dominant period
+#
+# FFT requires equally spaced data, so interpolate the full signal first.
+# ----------------------------------------------------------------------
+
+dt_raw = np.diff(time)
+dt_fft = np.mean(dt_raw)
+
+time_fft = np.arange(
+    time[0],
+    time[-1] + 0.5 * dt_fft,
+    dt_fft
 )
 
-best_start_index = None
-best_period_error = None
+volume_fft = np.interp(
+    time_fft,
+    time,
+    volume
+)
 
-for peak_index in peak_indices:
-    if peak_index >= cycle_end_index:
+x = volume_fft - np.mean(volume_fft)
+
+freq = np.fft.rfftfreq(
+    len(x),
+    d=dt_fft
+)
+
+fft_vals = np.abs(
+    np.fft.rfft(x)
+)
+
+if len(fft_vals) < 2:
+    raise RuntimeError('Not enough data for FFT')
+
+# Ignore zero-frequency component
+best_k = np.argmax(fft_vals[1:]) + 1
+f_dom = freq[best_k]
+
+if f_dom <= 0:
+    raise RuntimeError('Could not determine a valid dominant frequency')
+
+T_dom = 1.0 / f_dom
+
+
+# ----------------------------------------------------------------------
+# Valley detection on raw signal
+# ----------------------------------------------------------------------
+
+valleys = local_minima(volume)
+
+if len(valleys) < 2:
+    raise RuntimeError('Could not find enough valleys')
+
+
+# ----------------------------------------------------------------------
+# Choose ending valley near end of simulation
+# ----------------------------------------------------------------------
+
+t_end_threshold = time[-1] - END_WINDOW_PERIODS * T_dom
+
+candidate_end = [
+    i for i in valleys
+    if time[i] >= t_end_threshold
+]
+
+if not candidate_end:
+    candidate_end = valleys
+
+i_end = min(
+    candidate_end,
+    key=lambda i: volume[i]
+)
+
+
+# ----------------------------------------------------------------------
+# Find starting valley approximately one dominant period earlier
+# ----------------------------------------------------------------------
+
+best_start = None
+best_err = None
+
+for idx in valleys:
+
+    if idx >= i_end:
         continue
 
-    cycle_duration_candidate = (
-        time_values[cycle_end_index] - time_values[peak_index]
-    )
+    dt_cycle = time[i_end] - time[idx]
 
-    within_period_window = (
-        MIN_PERIOD_FACTOR * dominant_period
-        <= cycle_duration_candidate
-        <= MAX_PERIOD_FACTOR * dominant_period
-    )
+    if MIN_PERIOD_FACTOR * T_dom <= dt_cycle <= MAX_PERIOD_FACTOR * T_dom:
 
-    if within_period_window:
-        period_error = abs(cycle_duration_candidate - dominant_period)
+        err = abs(dt_cycle - T_dom)
 
         if (
-            best_period_error is None
-            or period_error < best_period_error
+            best_err is None
+            or err < best_err
             or (
-                abs(period_error - best_period_error) < 1e-12
-                and volume_values[peak_index]
-                > volume_values[best_start_index]
+                abs(err - best_err) < 1e-12
+                and volume[idx] < volume[best_start]
             )
         ):
-            best_period_error = period_error
-            best_start_index = peak_index
+            best_err = err
+            best_start = idx
 
 
-# If no peak lies inside the preferred period window, fall back to the
-# preceding peak whose duration is closest to the dominant period.
-if best_start_index is None:
-    for peak_index in peak_indices:
-        if peak_index >= cycle_end_index:
+# ----------------------------------------------------------------------
+# Fallback if no start valley lies within allowed period range
+# ----------------------------------------------------------------------
+
+if best_start is None:
+
+    for idx in valleys:
+
+        if idx >= i_end:
             continue
 
-        cycle_duration_candidate = (
-            time_values[cycle_end_index] - time_values[peak_index]
-        )
-        period_error = abs(cycle_duration_candidate - dominant_period)
+        dt_cycle = time[i_end] - time[idx]
+        err = abs(dt_cycle - T_dom)
 
-        if best_period_error is None or period_error < best_period_error:
-            best_period_error = period_error
-            best_start_index = peak_index
+        if best_err is None or err < best_err:
+            best_err = err
+            best_start = idx
 
-cycle_start_index = best_start_index
 
-cycle_time_values = time_values[cycle_start_index:cycle_end_index + 1]
-cycle_volume_values = volume_values[cycle_start_index:cycle_end_index + 1]
+if best_start is None:
+    raise RuntimeError('Could not identify starting valley')
+
+
+i_start = best_start
+
 
 # ----------------------------------------------------------------------
-# Cycle metrics and manuscript motility metric
+# Extract raw selected cycle
 # ----------------------------------------------------------------------
 
-mean_volume_cycle = np.mean(cycle_volume_values)
-std_volume_cycle = np.std(cycle_volume_values, ddof=0)
-volume_min_cycle = min(cycle_volume_values)
-volume_max_cycle = max(cycle_volume_values)
-peak_to_peak_cycle = volume_max_cycle - volume_min_cycle
+cycle_time_raw = time[i_start:i_end + 1]
+cycle_volume_raw = volume[i_start:i_end + 1]
+
+if len(cycle_volume_raw) < 2:
+    raise RuntimeError('Selected cycle contains too few points')
 
 
-# Manuscript motility metric: coefficient of variation of V(t) over
-# the selected cycle.
-MM = std_volume_cycle / mean_volume_cycle if mean_volume_cycle != 0 else 0.0
-peak_to_peak_over_mean = (
-    peak_to_peak_cycle / mean_volume_cycle
-    if mean_volume_cycle != 0
-    else 0.0
+# ----------------------------------------------------------------------
+# Interpolate selected cycle onto equally spaced grid
+# ----------------------------------------------------------------------
+
+cycle_time = np.linspace(
+    cycle_time_raw[0],
+    cycle_time_raw[-1],
+    N_METRIC_POINTS
 )
+
+cycle_volume = np.interp(
+    cycle_time,
+    cycle_time_raw,
+    cycle_volume_raw
+)
+
+
+# ----------------------------------------------------------------------
+# Motility metric
+#
+# MM = standard deviation of lumen volume over the selected cycle
+# ----------------------------------------------------------------------
+
+MM = np.std(cycle_volume)
+
+cycle_duration = cycle_time_raw[-1] - cycle_time_raw[0]
+
 
 # ----------------------------------------------------------------------
 # Print
 # ----------------------------------------------------------------------
 
-print('\n================ METRICS ================')
-print('Cycle start time           :', time_values[cycle_start_index])
-print('Cycle end time             :', time_values[cycle_end_index])
-print('Cycle duration             :',
-      time_values[cycle_end_index] - time_values[cycle_start_index])
-print('Mean volume (cycle)        :', mean_volume_cycle)
-print('STD volume (cycle)         :', std_volume_cycle)
-print('STD / mean  (MM)           :', MM)
-print('Peak-to-peak               :', peak_to_peak_cycle)
-print('Peak-to-peak / mean        :', peak_to_peak_over_mean)
-print('========================================\n')
 
-# ----------------------------------------------------------------------
-# Export cycle data
-# ----------------------------------------------------------------------
-
-with open(TXT_OUT, 'w') as text_file:
-    text_file.write('time\tvolume\n')
-    for time_value, volume_value in zip(cycle_time_values,
-                                        cycle_volume_values):
-        text_file.write('%.6f\t%.6f\n' % (time_value, volume_value))
-
-print('Cycle data exported to %s  (%d points)\n'
-      % (TXT_OUT, len(cycle_time_values)))
-
-# ----------------------------------------------------------------------
-# Plot
-# ----------------------------------------------------------------------
-
-plt.figure(figsize=(9, 4.5))
-plt.plot(time_values, volume_values, label='Volume')
-plt.axvspan(time_values[cycle_start_index],
-            time_values[cycle_end_index],
-            alpha=0.3, label='Last cycle')
-plt.scatter([time_values[cycle_start_index], time_values[cycle_end_index]],
-            [volume_values[cycle_start_index],
-             volume_values[cycle_end_index]],
-            color='red', label='Peaks')
-
-plt.xlabel('Time')
-plt.ylabel('Volume')
-plt.title('Lumen Volume vs Time')
-plt.legend()
-plt.grid(True)
-
-plt.show()
+print('Motility metric, MM = sigma_V :', MM)
+print('Cycle duration                :', cycle_duration)
