@@ -7,9 +7,9 @@
 # directory and collects the motility metric MM into a table.
 #
 # Run:
-#   python3 run_doe.py                  # Model 1 references + all 32 runs
-#   python3 run_doe.py --dry-run        # prepare everything, launch nothing
-#   python3 run_doe.py --only run05     # single case, for debugging
+#   python3 run_doe.py                  # Model 1 references + model 2 all 32 runs
+#   python3 run_doe.py --dry-run        # prepare everything, without launching
+#   python3 run_doe.py --only run05     # runs single case
 #   python3 run_doe.py --results-only   # re-collect MM from existing runs
 #
 # Per case:
