@@ -57,22 +57,22 @@ INNER_SURFACE
 ** 3  B_FHN
 ** 4  C_FHN
 ** 5  PHI_R
-** 6  PHI_OFFSET
-** 7  A_SW0
+** 6  PHI_OFF
+** 7  A_SW
 ** 8  PHI_TH
 ** 9  DELTA_S
 ** 10 T0
 ** 11 TAU_T
-** 12 MU0
+** 12 MU_0
 ** 13 EPSILON_0
 ** 14 EPSILON_Z
-** 15 KF_CIRC
-** 16 KF_LONG
+** 15 KF_C
+** 16 KF_L
 ** 17 EPSILON_LAMBDA
 ** 18 ETA_MU
 ** 19 ETA_T
 ** 20 ETA_A
-** 21 KAPPA_FACTOR : Bulk-to-shear modulus ratio kappa_fac (-)
+** 21 KAPPA_FAC : Bulk-to-shear modulus ratio kappa_fac (-)
 *USER MATERIAL, TYPE=THERMAL, CONSTANTS=3
 1.0, 20.0, <eta_D>
 ** 1 C_PHI
