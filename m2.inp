@@ -1,3 +1,16 @@
+*HEADING
+** Model 2: three-dimensional electromechanical framework
+** Imported geometry + imported triad field
+** Units: Length - mm, Time - s, Stress - kPa, Potential - mV
+** author: Ahilan Anantha Krishnan
+** contributor: Masah Abubaker
+**
+** TEMP = phi
+** PREDEF(1) = fibrosis field m
+** PREDEF(2:4) = e_r
+** PREDEF(5:7) = e_theta
+** PREDEF(8:10) = e_z
+** Imported triad is used as the Step 2 reference basis
 ** Baseline eta values for a manual (non-DOE) run.  run_doe.py replaces
 ** this block with an *INCLUDE of the case's own eta_params.inp.
 *PARAMETER
@@ -5,14 +18,6 @@ eta_D  = 0.0
 eta_a  = 0.0
 eta_T  = 0.0
 eta_mu = 0.0
-*HEADING
-** Step 2A: working electromechanics model + imported geometry + imported triad field
-** TEMP = phi
-** PREDEF(1) = fibrosis field m
-** PREDEF(2:4) = e_r
-** PREDEF(5:7) = e_theta
-** PREDEF(8:10) = e_z
-** Imported triad is used as the Step 2 reference basis
 *PREPRINT, ECHO=YES, MODEL=YES, HISTORY=YES
 *IMPORT, STEP=1, UPDATE=YES, STATE=NO
 ILEUM
@@ -43,10 +48,10 @@ INNER_SURFACE
 ** 10 ER_X
 ** 11 ER_Y
 ** 12 ER_Z
-*USER MATERIAL, TYPE=MECHANICAL, CONSTANTS=20,UNSYMM
+*USER MATERIAL, TYPE=MECHANICAL, CONSTANTS=21,UNSYMM
 7.0, 0.5, 8.0, 0.5, -60.0, 13.0, 7.8, -40.0,
 0.6, 2.0, 0.5, 0.64, 0.15, -0.00004, 210, 1900,
-0.104, <eta_mu>, <eta_T>, <eta_a>
+0.104, <eta_mu>, <eta_T>, <eta_a>, 100.0
 ** 1  KAPPA_FHN
 ** 2  A0_FHN
 ** 3  B_FHN
@@ -67,6 +72,7 @@ INNER_SURFACE
 ** 18 ETA_MU
 ** 19 ETA_T
 ** 20 ETA_A
+** 21 KAPPA_FACTOR : Bulk-to-shear modulus ratio kappa_fac (-)
 *USER MATERIAL, TYPE=THERMAL, CONSTANTS=3
 1.0, 20.0, <eta_D>
 ** 1 C_PHI

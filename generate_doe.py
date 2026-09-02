@@ -9,7 +9,9 @@
 #
 # The four dimensionless disease scaling parameters are each varied between
 # a baseline level (B, eta = 0) and a moderate-disease level
-# (M, eta = 0.5 * eta_max).  Run order follows the manuscript convention, (Fig. 6).
+# (M, eta = 0.5 * eta_max).
+# The hypertrophy growth rate gamma_h is varied between a baseline level
+# (B, gamma_h = 0) and a moderate-disease level (M, gamma_h = 0.69).
 
 from __future__ import print_function
 
@@ -34,11 +36,7 @@ ETA_MAX = (
 
 MODERATE_FRACTION = 0.5
 
-# gamma_h is Model 1's hypertrophy growth rate (m1.inp PROPS(4), the
-# "GAMMA_G" that drives theta_h).  Unlike the four eta factors above it is
-# not a fraction of a severity maximum -- its two DOE levels are the
-# manuscript's rate values directly: ungrown (0.0) and the growth rate
-# that reaches theta_h ~ 2 after one time unit (0.69).
+# gamma_h is Model 1's hypertrophy growth rate that drives theta_h.
 GAMMA_H_LEVELS = {'B': 0.0, 'M': 0.69}
 
 # Factor name width used when writing the *PARAMETER block, chosen so the

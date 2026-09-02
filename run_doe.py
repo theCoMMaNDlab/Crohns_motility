@@ -1,6 +1,6 @@
 # run_doe.py
 #
-# Driver for the full-factorial 2^5 design of experiments
+# Automate the full-factorial 2^5 design of experiments
 # (eta_D, eta_a, eta_T, eta_mu, gamma_h).
 #
 # Runs the two-model workflow once per DOE combination in its own working
@@ -13,7 +13,7 @@
 #   python3 run_doe.py --results-only   # re-collect MM from existing runs
 #
 # Per case:
-#   Model 1  -> m1.odb                  (gamma_h selects the reference)
+#   Model 1  -> m1.odb                  (gamma_h selects the reference state)
 #   export   -> triad_fields.inp
 #   Model 2  -> m2.odb
 #   volume   -> motility_volume_cross_sections.csv

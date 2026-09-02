@@ -233,13 +233,15 @@ C Read FHN, active-stress, passive-mechanics, and disease parameters.
       ETA_MU         = PROPS(18)
       ETA_T       = PROPS(19)
       ETA_A          = PROPS(20)
+      KAPPA_FAC      = PROPS(21)
 
 
 C Disease-dependent constitutive parameters.
       MU      = MU_0*(ONE + ETA_MU*M)
-C Bulk modulus is hardcoded at 100x the shear modulus to enforce
-C near-incompressibility.
-      KAPPA = 100.D0*MU
+C Bulk modulus is kappa_fac times the shear modulus, enforcing
+C near-incompressibility.  kappa_fac is supplied through PROPS(21),
+C matching the way Model 1 passes it in m1.inp.
+      KAPPA = KAPPA_FAC*MU
       T_MAX  = T0*(ONE - ETA_T*M)
       A_THRESH = A_0*(ONE - ETA_A*M)
 

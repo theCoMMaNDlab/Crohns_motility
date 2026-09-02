@@ -1,7 +1,9 @@
-** Model 1 Abaqus input deck: fibrosis growth job.
-** UNITS: Length - mm, Time - s, Stress - kPa
 *HEADING
-** Run 1: coupled fibrosis-growth job
+** Model 1: quarter-cylinder coupled fibrosis-growth 
+** Units: Length - mm, Time - decade, Stress - kPa
+** author: Ahilan Anantha Krishnan
+** contributor: Masah Abubaker
+**
 ** NT = fibrosis field m
 ** UMATHT solves logistic/KPP-type fibrosis field
 ** UMAT uses m directly to evolve radial growth
@@ -25,14 +27,14 @@
 ** 1 MU0          : Initial shear modulus mu_0 (kPa)
 ** 2 KF_CIRC      : Circumferential fiber stiffness k_f,c (kPa)
 ** 3 KF_LONG      : Longitudinal fiber stiffness k_f,l (kPa)
-** 4 GAMMA_G      : Growth rate parameter gamma_g (1/s)
+** 4 GAMMA_G      : Growth rate parameter gamma_g (1/decade)
 ** 5 KAPPA_FACTOR : Bulk-to-shear modulus ratio kappa_fac (-)
-** 6 S0           : Logistic source rate s_0, returned in RPL (1/s)
+** 6 S0           : Logistic source rate s_0, returned in RPL (1/decade)
 *USER MATERIAL, TYPE=THERMAL, CONSTANTS=2
 1.0, 20.0
 ** PROPS (THERMAL):
 ** 1 C_M : Temporal scaling parameter c_m (-)
-** 2 D_M : Fibrosis diffusivity D_m (mm^2/s)
+** 2 D_M : Fibrosis diffusivity D_m (mm^2/decade)
 *SOLID SECTION, ELSET=ILEUM, MATERIAL=MAT_ILEUM, ORIENTATION=CYL
 *INITIAL CONDITIONS, TYPE=TEMPERATURE
 ALL_NODES, 0.0

@@ -1,4 +1,5 @@
-# report_motility_metrics.py
+# motility_metric.py
+# MM = sigma_V over the final peristaltic cycle
 
 import csv
 import numpy as np
