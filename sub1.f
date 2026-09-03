@@ -34,7 +34,7 @@ C PROPS(2) = D_m, isotropic fibrosis diffusivity.
 C     Symbol names follow the manuscript equations where possible.
 
 
-      C_M    = PROPS(1)
+      C_M = PROPS(1)
       D_M = PROPS(2)
 
 
@@ -176,19 +176,19 @@ C with six Voigt stress/tangent components.
 
 
 C Read material parameters from the Abaqus input file in manuscript order.
-      MU_0        = PROPS(1)
-      K_C  = PROPS(2)
-      K_L  = PROPS(3)
-      GAMMA_G = PROPS(4)
+      MU_0      = PROPS(1)
+      K_C       = PROPS(2)
+      K_L       = PROPS(3)
+      GAMMA_G   = PROPS(4)
       KAPPA_FAC = PROPS(5)
-      S0    = PROPS(6)
+      S0        = PROPS(6)
 
-      MU   = MU_0
+      MU    = MU_0
       KAPPA = KAPPA_FAC*MU_0
 
 
 C Current fibrosis value m at the integration point.
-      M     = TEMP + DTEMP
+      M         = TEMP + DTEMP
       GAMMA_G_M = GAMMA_G*M
 
 

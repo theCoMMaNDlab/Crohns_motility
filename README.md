@@ -32,7 +32,8 @@ The temperature DOF is used as a surrogate scalar field in both models to solve 
 ├── motility_volume_cross_sections.csv  # Generated: volume vs time output
 ├── generate_doe.py               # Defines the DOE parameters and the run table
 ├── run_doe.py                    # DOE driver: runs the workflow for every combination
-└── commands.txt                  # Quick reference for run commands
+├── requirements.txt              # Python dependencies for the standalone scripts
+└── LICENSE                       # GNU General Public License v3.0
 ```
 
 ---
@@ -41,6 +42,15 @@ The temperature DOF is used as a surrogate scalar field in both models to solve 
 
 - Abaqus 2024 or above (also used to run `export_triad_fields.py` and `motility_from_cross_sections.py` via `abaqus python` / `abaqus viewer`)
 - Python 3.8+ with `numpy`, for the standalone post-processing script `motility_metric.py`
+
+```bash
+pip install -r requirements.txt
+```
+
+`export_triad_fields.py` and `motility_from_cross_sections.py` import `odbAccess` /
+`abaqusConstants`, which ship with Abaqus and are not on PyPI; run those two with the
+Abaqus interpreter (`abaqus python` / `abaqus viewer`) as shown below.
+
 ---
 
 ## Workflow
@@ -111,6 +121,26 @@ Prints the motility metric and the cycle duration to the console.
 
 ---
 
+## Quick reference
+
+The five manual steps in order, run from the directory holding the decks:
+
+```bash
+abaqus job=m1 input=m1.inp user=sub1.f cpus=4 interactive
+abaqus python export_triad_fields.py --odb m1.odb --out triad_fields.inp
+abaqus job=m2 oldjob=m1 input=m2.inp user=sub2.f cpus=4 interactive
+abaqus viewer noGUI=motility_from_cross_sections.py
+python motility_metric.py
+```
+
+Or run all 32 DOE cases end to end:
+
+```bash
+python3 run_doe.py --cpus 8
+```
+
+---
+
 ## Automated DOE
 
 `run_doe.py` orchestrates the five manual steps above for all 32 DOE
@@ -140,3 +170,9 @@ into that case's own `eta_params.inp` — nothing is read from disk first.
 - The temperature DOF carries the normalised ICC potential *φ* ∈ [0, 1] in Model 2.
 - `INNER_SURFACE` must be defined in `mesh.inp` for the volume computation to work — it represents the lumen-facing nodes within the fibrotic seed region.
 - All scripts assume the working directory contains the relevant `.odb`, `.inp`, and `.csv` files.
+
+---
+
+## License
+
+Released under the GNU General Public License v3.0 — see [LICENSE](LICENSE).

@@ -26,9 +26,6 @@ doe_params/
 *.SMABulk
 *.023
 
-# Final DOE table written by run_doe.py.
-DOE_MM_results.txt
-
 # Post-processing output written into whichever directory the scripts run in.
 triad_fields.inp
 motility_volume_cross_sections.csv

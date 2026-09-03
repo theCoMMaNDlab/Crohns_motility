@@ -52,32 +52,32 @@ INNER_SURFACE
 7.0, 0.5, 8.0, 0.5, -60.0, 13.0, 7.8, -40.0,
 0.6, 2.0, 0.5, 0.64, 0.15, -0.00004, 210, 1900,
 0.104, <eta_mu>, <eta_T>, <eta_a>, 100.0
-** 1  KAPPA_FHN
-** 2  A0_FHN
-** 3  B_FHN
-** 4  C_FHN
-** 5  PHI_R
-** 6  PHI_OFF
-** 7  A_SW
-** 8  PHI_TH
-** 9  DELTA_S
-** 10 T0
-** 11 TAU_T
-** 12 MU_0
-** 13 EPSILON_0
-** 14 EPSILON_Z
-** 15 KF_C
-** 16 KF_L
-** 17 EPSILON_LAMBDA
-** 18 ETA_MU
-** 19 ETA_T
-** 20 ETA_A
+** 1  KAPPA_FHN (1/s)
+** 2  A0_FHN (-)
+** 3  B_FHN (1/s)
+** 4  C_FHN (-)
+** 5  PHI_R (mV)
+** 6  PHI_OFF (mV)
+** 7  A_SW (mV)
+** 8  PHI_TH (mV)
+** 9  DELTA_S (mV)
+** 10 T0 (kPa)
+** 11 TAU_T (s)
+** 12 MU_0 (kPa)
+** 13 EPSILON_0 (1/s)
+** 14 EPSILON_Z (1/(mm*s))
+** 15 KF_C (kPa)
+** 16 KF_L (kPa)
+** 17 EPSILON_LAMBDA (1/s)
+** 18 ETA_MU (-)
+** 19 ETA_T (-)
+** 20 ETA_A (-)
 ** 21 KAPPA_FAC : Bulk-to-shear modulus ratio kappa_fac (-)
 *USER MATERIAL, TYPE=THERMAL, CONSTANTS=3
 1.0, 20.0, <eta_D>
-** 1 C_PHI
-** 2 D0
-** 3 ETA_D
+** 1 C_PHI (-)
+** 2 D0 (mm^2/s)
+** 3 ETA_D (-)
 *SOLID SECTION, ELSET=ILEUM, MATERIAL=SMCICC
 *INITIAL CONDITIONS, TYPE=TEMPERATURE
 ALL_NODES, 0.0

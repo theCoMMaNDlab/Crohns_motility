@@ -33,10 +33,10 @@ C     Symbol names follow the manuscript equations where possible.
 
 
 C Current electrical potential phi and imported fibrosis scalar m.
-      PHI     = TEMP + DTEMP
-      M       = PREDEF(1)
-      C_PHI   = PROPS(1)
-      D_0      = PROPS(2)
+      PHI   = TEMP + DTEMP
+      M     = PREDEF(1)
+      C_PHI = PROPS(1)
+      D_0   = PROPS(2)
       ETA_D = PROPS(3)
 
 
@@ -205,44 +205,44 @@ C Normalize imported basis vectors before using them in tensor operations.
 
 
 C Retrieve history variables from the previous increment.
-      W_OLD    = ZERO
+      W_OLD     = ZERO
       T_ACT_OLD = ZERO
-      IF (NSTATV .GE. 1) W_OLD    = STATEV(1)
+      IF (NSTATV .GE. 1) W_OLD     = STATEV(1)
       IF (NSTATV .GE. 2) T_ACT_OLD = STATEV(2)
 
 
 
 C Read FHN, active-stress, passive-mechanics, and disease parameters.
-      KAPPA_FHN          = PROPS(1)
-      A_0 = PROPS(2)
-      B_PARAM          = PROPS(3)
-      C_PARAM          = PROPS(4)
+      KAPPA_FHN      = PROPS(1)
+      A_0            = PROPS(2)
+      B_PARAM        = PROPS(3)
+      C_PARAM        = PROPS(4)
       PHI_R          = PROPS(5)
-      PHI_OFF     = PROPS(6)
-      A_SW          = PROPS(7)
+      PHI_OFF        = PROPS(6)
+      A_SW           = PROPS(7)
       PHI_TH         = PROPS(8)
       DELTA_S        = PROPS(9)
       T0             = PROPS(10)
       TAU_T          = PROPS(11)
-      MU_0            = PROPS(12)
+      MU_0           = PROPS(12)
       EPSILON_0      = PROPS(13)
-      EPSILON_Z = PROPS(14)
-      K_C        = PROPS(15)
-      K_L        = PROPS(16)
-      EPSILON_LAMBDA    = PROPS(17)
+      EPSILON_Z      = PROPS(14)
+      K_C            = PROPS(15)
+      K_L            = PROPS(16)
+      EPSILON_LAMBDA = PROPS(17)
       ETA_MU         = PROPS(18)
-      ETA_T       = PROPS(19)
+      ETA_T          = PROPS(19)
       ETA_A          = PROPS(20)
       KAPPA_FAC      = PROPS(21)
 
 
 C Disease-dependent constitutive parameters.
-      MU      = MU_0*(ONE + ETA_MU*M)
+      MU       = MU_0*(ONE + ETA_MU*M)
 C Bulk modulus is kappa_fac times the shear modulus, enforcing
 C near-incompressibility.  kappa_fac is supplied through PROPS(21),
 C matching the way Model 1 passes it in m1.inp.
-      KAPPA = KAPPA_FAC*MU
-      T_MAX  = T0*(ONE - ETA_T*M)
+      KAPPA    = KAPPA_FAC*MU
+      T_MAX    = T0*(ONE - ETA_T*M)
       A_THRESH = A_0*(ONE - ETA_A*M)
 
 
@@ -371,7 +371,7 @@ C First-order active tension update and its phi derivative.
 C DT_TAU caches DTIME/TAU_T so the ratio is formed once, not four times.
       DT_TAU       = DTIME/TAU_T
       T_ACT_TARGET = T_MAX*A_GATE
-      T_ACT_NEW = ( T_ACT_OLD + DT_TAU*T_ACT_TARGET )
+      T_ACT_NEW    = ( T_ACT_OLD + DT_TAU*T_ACT_TARGET )
      1         / ( ONE + DT_TAU )
 
       D_T_ACT_D_PHI = ( ONE/(ONE + DT_TAU) )
