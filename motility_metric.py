@@ -18,6 +18,7 @@ N_METRIC_POINTS = 1000
 # Helpers
 # ----------------------------------------------------------------------
 
+# Identify local minima in vals and return their indices as a list.
 def local_minima(vals):
     idx = []
     i = 1
