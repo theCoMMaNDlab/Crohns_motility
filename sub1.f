@@ -121,7 +121,7 @@ C   STATEV(1) = theta_h, radial growth multiplier
       DOUBLE PRECISION F_TOTAL(3,3),F_E(3,3)
       DOUBLE PRECISION F_H_INV(3,3),F_H(3,3)
       DOUBLE PRECISION B_E(3,3)
-      DOUBLE PRECISION IDENTITY(3,3),DELTA(3,3)
+      DOUBLE PRECISION DELTA(3,3)
       DOUBLE PRECISION N_R(3),THETA_H_MINUS_ONE
 
       DOUBLE PRECISION SIGMA_ISO(3,3),SIGMA(3,3)
@@ -208,7 +208,6 @@ C The exponential form is the exact update for constant m over DTIME.
          DO I2=1,3
             F_TOTAL(I1,I2)    = DFGRD1(I1,I2)
             F_E(I1,I2)  = ZERO
-            IDENTITY(I1,I2)        = ZERO
             DELTA(I1,I2)           = ZERO
             B_E(I1,I2)   = ZERO
             F_H_INV(I1,I2)       = ZERO
@@ -219,7 +218,6 @@ C The exponential form is the exact update for constant m over DTIME.
             SIGMA_L(I1,I2) = ZERO
             D_SIGMA_D_M(I1,I2) = ZERO
          END DO
-         IDENTITY(I1,I1) = ONE
          DELTA(I1,I1)    = ONE
       END DO
 
@@ -235,7 +233,7 @@ C and local-3 is longitudinal under the cylindrical orientation.
 C Growth tensor F_h = I + (theta_h - 1) N_r x N_r.
       DO I1=1,3
          DO I2=1,3
-            F_H(I1,I2) = IDENTITY(I1,I2)
+            F_H(I1,I2) = DELTA(I1,I2)
      1                           + THETA_H_MINUS_ONE*N_R(I1)*N_R(I2)
          END DO
       END DO
