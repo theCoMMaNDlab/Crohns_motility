@@ -28,7 +28,7 @@
 ** 2 KF_CIRC      : Circumferential fiber stiffness k_f,c (kPa)
 ** 3 KF_LONG      : Longitudinal fiber stiffness k_f,l (kPa)
 ** 4 GAMMA_h      : Growth rate parameter gamma_g (1/decade)
-** 5 KAPPA_FACTOR : Bulk-to-shear modulus ratio kappa_fac (-)
+** 5 KAPPA_FACTOR : Bulk-to-shear modulus ratio 
 ** 6 S0           : Logistic source rate s_0, returned in RPL (1/decade)
 *USER MATERIAL, TYPE=THERMAL, CONSTANTS=2
 1.0, 20.0
