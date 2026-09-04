@@ -23,12 +23,15 @@ C ============================================================
      1 COORDS(3),PNEWDT
 
       DOUBLE PRECISION PHI,C_PHI,D_0,D_EFF,M,ETA_D
+      DOUBLE PRECISION ZERO,ONE
 C
 C PHI is the normalized electrical potential.
 C M is the imported fibrosis field from Model 1.
 C C_PHI, D_0, and ETA_D define c_phi and d_eff.
 C     Symbol names follow the manuscript equations where possible.
       INTEGER I1,I2
+
+      PARAMETER (ZERO=0.D0, ONE=1.D0)
 
 
 
@@ -41,7 +44,7 @@ C Current electrical potential phi and imported fibrosis scalar m.
 
 
 C Effective diffusivity: d_eff = d_0 (1 - eta_D m).
-      D_EFF = D_0*(1.D0 - ETA_D*M)
+      D_EFF = D_0*(ONE - ETA_D*M)
 
 
 C Storage term: U = c_phi phi, with tangent dU/dphi = c_phi.
@@ -49,13 +52,13 @@ C Storage term: U = c_phi phi, with tangent dU/dphi = c_phi.
       DUDT = C_PHI
 
       DO I1=1,NTGRD
-         DUDG(I1) = 0.D0
+         DUDG(I1) = ZERO
 
 C Electrical flux: q = -d_eff grad(phi).
          FLUX(I1) = -D_EFF*DTEMDX(I1)
-         DFDT(I1) = 0.D0
+         DFDT(I1) = ZERO
          DO I2=1,NTGRD
-            DFDG(I1,I2) = 0.D0
+            DFDG(I1,I2) = ZERO
          END DO
          DFDG(I1,I1) = -D_EFF
       END DO
@@ -131,7 +134,7 @@ C   STATEV(10:12) = e_r components
       DOUBLE PRECISION MU,KAPPA,KAPPA_FAC
       DOUBLE PRECISION F(3,3),F_E(3,3),F_H_INV(3,3)
       DOUBLE PRECISION B_LEFT_CG(3,3),IDENT(3,3)
-      DOUBLE PRECISION SIGMA_PAS(3,3),SIGMA_ACT(3,3),SIGMA(3,3)
+      DOUBLE PRECISION SIGMA_ISO(3,3),SIGMA_ACT(3,3),SIGMA(3,3)
       DOUBLE PRECISION SIGMA_C(3,3),SIGMA_L(3,3)
       DOUBLE PRECISION C_PAS(3,3,3,3),C_ACT(3,3,3,3),C_TOTAL(3,3,3,3)
       DOUBLE PRECISION C_C(3,3,3,3),C_L(3,3,3,3)
@@ -403,9 +406,9 @@ C Passive stress: compressible neo-Hookean matrix plus tension-only fibers.
 
       DO I1=1,3
          DO I2=1,3
-            SIGMA_PAS(I1,I2) = (MU/J)*B_LEFT_CG(I1,I2)
+            SIGMA_ISO(I1,I2) = (MU/J)*B_LEFT_CG(I1,I2)
          END DO
-         SIGMA_PAS(I1,I1) = SIGMA_PAS(I1,I1) + (PRESSURE_TERM/J)
+         SIGMA_ISO(I1,I1) = SIGMA_ISO(I1,I1) + (PRESSURE_TERM/J)
       END DO
 
 
@@ -433,7 +436,7 @@ C Active Cauchy stress acts along the current circumferential direction.
          DO I2=1,3
             SIGMA_ACT(I1,I2) = T_ACT_NEW*N_C_CUR(I1)*N_C_CUR(I2)
 
-            SIGMA(I1,I2) = SIGMA_PAS(I1,I2)
+            SIGMA(I1,I2) = SIGMA_ISO(I1,I2)
      1                       + SIGMA_C(I1,I2)
      2                       + SIGMA_L(I1,I2)
      3                       + SIGMA_ACT(I1,I2)
