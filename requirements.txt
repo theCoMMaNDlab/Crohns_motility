@@ -1,16 +1,23 @@
-# Python dependencies for the standalone post-processing and DOE scripts.
+# ============================================================
+# Software environment used in this study
+# ============================================================
+
+# Python
+# Anaconda Python 3.13
+
+# Python dependencies
+numpy==2.3.4
+scipy==1.16.3
+matplotlib==3.10.0
+
+# Abaqus
+# Abaqus 2024
 #
-#   pip install -r requirements.txt
+# The following scripts require the Abaqus Python environment
+# because they use odbAccess and abaqusConstants:
+#   export_triad_fields.py
+#   motility_from_cross_sections.py
 #
-# Covers the scripts run with a normal Python 3.8+ interpreter:
-#   motility_metric.py   (numpy)
-#   generate_doe.py      (standard library only)
-#   run_doe.py           (standard library only)
-#
-# NOT covered: export_triad_fields.py and motility_from_cross_sections.py
-# import odbAccess and abaqusConstants, which ship inside Abaqus and are not
-# installable from PyPI.  Run those two with the Abaqus interpreter instead:
+# Example:
 #   abaqus python export_triad_fields.py --odb m1.odb --out triad_fields.inp
 #   abaqus viewer noGUI=motility_from_cross_sections.py
-
-numpy>=1.20

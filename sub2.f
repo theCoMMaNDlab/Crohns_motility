@@ -136,7 +136,7 @@ C   STATEV(10:12) = e_r components
       DOUBLE PRECISION B_LEFT_CG(3,3),IDENT(3,3)
       DOUBLE PRECISION SIGMA_ISO(3,3),SIGMA_ACT(3,3),SIGMA(3,3)
       DOUBLE PRECISION SIGMA_C(3,3),SIGMA_L(3,3)
-      DOUBLE PRECISION C_PAS(3,3,3,3),C_ACT(3,3,3,3),C_TOTAL(3,3,3,3)
+      DOUBLE PRECISION C_ISO(3,3,3,3),C_ACT(3,3,3,3),C_TOTAL(3,3,3,3)
       DOUBLE PRECISION C_C(3,3,3,3),C_L(3,3,3,3)
       DOUBLE PRECISION C_GEOM(3,3,3,3)
       DOUBLE PRECISION J,LOG_J,PRESSURE_TERM
@@ -253,10 +253,10 @@ C Model 2 has no additional growth, so F_h^{-1} is the identity
 C and the elastic deformation gradient equals the total gradient.
       DO I1=1,3
          DO I2=1,3
-            F(I1,I2)     = DFGRD1(I1,I2)
-            F_E(I1,I2)    = ZERO
-            IDENT(I1,I2) = ZERO
-            B_LEFT_CG(I1,I2)  = ZERO
+            F(I1,I2)         = DFGRD1(I1,I2)
+            F_E(I1,I2)       = ZERO
+            IDENT(I1,I2)     = ZERO
+            B_LEFT_CG(I1,I2) = ZERO
          END DO
          IDENT(I1,I1) = ONE
       END DO
@@ -454,7 +454,7 @@ C Assemble passive, active, and geometric tangent contributions.
             DO I3=1,3
                DO I4=1,3
 
-                  C_PAS(I1,I2,I3,I4) =
+                  C_ISO(I1,I2,I3,I4) =
      1              (KAPPA/J)*IDENT(I1,I2)*IDENT(I3,I4)
      2            - (PRESSURE_TERM/J)*
      3              ( IDENT(I1,I3)*IDENT(I2,I4)
@@ -485,7 +485,7 @@ C Assemble passive, active, and geometric tangent contributions.
      5            + IDENT(I2,I4)*SIGMA(I1,I3) )
 
                   C_TOTAL(I1,I2,I3,I4) =
-     1               C_PAS(I1,I2,I3,I4)
+     1               C_ISO(I1,I2,I3,I4)
      2             + C_C(I1,I2,I3,I4)
      3             + C_L(I1,I2,I3,I4)
      4             + C_ACT(I1,I2,I3,I4)

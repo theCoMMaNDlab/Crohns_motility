@@ -13,7 +13,7 @@
 #   python3 run_doe.py --results-only   # re-collect MM from existing runs
 #
 # Per case:
-#   Model 1  -> m1.odb                  (gamma_h selects the reference state)
+#   Model 1  -> m1.odb
 #   export   -> triad_fields.inp
 #   Model 2  -> m2.odb
 #   volume   -> motility_volume_cross_sections.csv
@@ -75,7 +75,7 @@ SEED_LINE_PATTERN = re.compile(
     re.IGNORECASE
 )
 
-# gamma_h (Model 1's GAMMA_G, PROPS(4)) is located by the
+# gamma_h (Model 1's GAMMA_H, PROPS(4)) is located by the
 # MECHANICAL *USER MATERIAL header on the preceding line.
 GAMMA_HEADER_PATTERN = re.compile(
     r'^\s*\*USER MATERIAL\s*,\s*TYPE\s*=\s*MECHANICAL', re.IGNORECASE

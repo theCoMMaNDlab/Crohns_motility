@@ -105,7 +105,7 @@ C Main material parameters for Model 1:
 C   PROPS(1) = mu_0, healthy shear modulus
 C   PROPS(2) = k_c, circumferential fiber stiffness
 C   PROPS(3) = k_l, longitudinal fiber stiffness
-C   PROPS(4) = gamma_g, growth rate parameter
+C   PROPS(4) = gamma_h, growth rate parameter
 C   PROPS(5) = kappa_fac, bulk-to-shear modulus factor
 C   PROPS(6) = s_0, logistic source rate
 C
@@ -113,9 +113,9 @@ C State variables used by Model 1:
 C   STATEV(1) = theta_h, radial growth multiplier
 
       DOUBLE PRECISION MU_0,K_C,K_L
-      DOUBLE PRECISION GAMMA_G, KAPPA_FAC
+      DOUBLE PRECISION GAMMA_H, KAPPA_FAC
       DOUBLE PRECISION MU,KAPPA
-      DOUBLE PRECISION M, GAMMA_G_M, GAMMA_G_DT
+      DOUBLE PRECISION M, GAMMA_H_M, GAMMA_H_DT
       DOUBLE PRECISION THETA_H_OLD, THETA_H_NEW
 
       DOUBLE PRECISION F_TOTAL(3,3),F_E(3,3)
@@ -179,7 +179,7 @@ C Read material parameters from the Abaqus input file in manuscript order.
       MU_0      = PROPS(1)
       K_C       = PROPS(2)
       K_L       = PROPS(3)
-      GAMMA_G   = PROPS(4)
+      GAMMA_H   = PROPS(4)
       KAPPA_FAC = PROPS(5)
       S0        = PROPS(6)
 
@@ -189,7 +189,7 @@ C Read material parameters from the Abaqus input file in manuscript order.
 
 C Current fibrosis value m at the integration point.
       M         = TEMP + DTEMP
-      GAMMA_G_M = GAMMA_G*M
+      GAMMA_H_M = GAMMA_H*M
 
 
 C Logistic reaction source S = s_0 m (1 - m) and its tangent.
@@ -202,23 +202,23 @@ C The exponential form is the exact update for constant m over DTIME.
       THETA_H_OLD = ONE
       IF (NSTATV .GE. 1) THETA_H_OLD = STATEV(1)
 
-      THETA_H_NEW = THETA_H_OLD*DEXP(GAMMA_G_M*DTIME)
+      THETA_H_NEW = THETA_H_OLD*DEXP(GAMMA_H_M*DTIME)
 
       DO I1=1,3
          DO I2=1,3
-            F_TOTAL(I1,I2)    = DFGRD1(I1,I2)
-            F_E(I1,I2)  = ZERO
-            DELTA(I1,I2)           = ZERO
-            B_E(I1,I2)   = ZERO
-            F_H_INV(I1,I2)       = ZERO
-            F_H(I1,I2)    = ZERO
-            SIGMA_ISO(I1,I2)       = ZERO
-            SIGMA(I1,I2)     = ZERO
-            SIGMA_C(I1,I2) = ZERO
-            SIGMA_L(I1,I2) = ZERO
+            F_TOTAL(I1,I2)     = DFGRD1(I1,I2)
+            F_E(I1,I2)         = ZERO
+            DELTA(I1,I2)       = ZERO
+            B_E(I1,I2)         = ZERO
+            F_H_INV(I1,I2)     = ZERO
+            F_H(I1,I2)         = ZERO
+            SIGMA_ISO(I1,I2)   = ZERO
+            SIGMA(I1,I2)       = ZERO
+            SIGMA_C(I1,I2)     = ZERO
+            SIGMA_L(I1,I2)     = ZERO
             D_SIGMA_D_M(I1,I2) = ZERO
          END DO
-         DELTA(I1,I1)    = ONE
+         DELTA(I1,I1) = ONE
       END DO
 
 
@@ -383,7 +383,7 @@ C Assemble material and geometric spatial tangent contributions.
 
 
 C Algorithmic stress sensitivity to the fibrosis scalar m.
-      GAMMA_G_DT = GAMMA_G*DTIME
+      GAMMA_H_DT = GAMMA_H*DTIME
 
       LAMBDA_R_E = DSQRT(F_E(1,1)*F_E(1,1)
      1              + F_E(2,1)*F_E(2,1)
@@ -393,13 +393,13 @@ C Algorithmic stress sensitivity to the fibrosis scalar m.
       END DO
 
       D_PRESSURE_D_M =
-     1   (GAMMA_G_DT/J_E)
+     1   (GAMMA_H_DT/J_E)
      2 * (KAPPA*LOG_J_E - MU - KAPPA)
 
       DO I1=1,3
          DO I2=1,3
             D_SIGMA_D_M(I1,I2) =
-     1         (MU*GAMMA_G_DT/J_E)
+     1         (MU*GAMMA_H_DT/J_E)
      2         * ( B_E(I1,I2)
      3           - TWO*LAMBDA_R_E*LAMBDA_R_E*N_R_CUR(I1)*N_R_CUR(I2) )
          END DO
@@ -410,8 +410,8 @@ C Algorithmic stress sensitivity to the fibrosis scalar m.
       DO I1=1,3
          DO I2=1,3
             D_SIGMA_D_M(I1,I2) = D_SIGMA_D_M(I1,I2)
-     1                            + GAMMA_G_DT*SIGMA_C(I1,I2)
-     2                            + GAMMA_G_DT*SIGMA_L(I1,I2)
+     1                            + GAMMA_H_DT*SIGMA_C(I1,I2)
+     2                            + GAMMA_H_DT*SIGMA_L(I1,I2)
          END DO
       END DO
 
