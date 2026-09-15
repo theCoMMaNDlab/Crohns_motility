@@ -7,11 +7,16 @@ Levels:  B = baseline   eta = 0; vartheta^h = 1.0
          M = moderate   eta = 0.5*eta_ref; vartheta^h = 2.0
                           for the hypertrophy factor
 
+Reads the 32-run MM table from DOE_MM_results.txt (written by
+run_doe.py)
+
 Python port of the original MATLAB script. Console output, figure layout
 and colour scheme are reproduced as closely as matplotlib allows.
 =========================================================================
 """
 
+import os
+import re
 from itertools import combinations
 
 import matplotlib as mpl
@@ -36,54 +41,72 @@ mpl.rcParams["axes.unicode_minus"] = False
 
 
 # -----------------------------------------------------------------------
-# Data
+# Data: read the DOE run table written by run_doe.py's write_summary()
 # -----------------------------------------------------------------------
-BASELINE_MM = 130.16          # healthy geometry, healthy material
+RESULTS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                            'DOE_MM_results.txt')
+
+LEVEL_TO_CODE = {'B': -1, 'M': +1}
+
+# Matches one data row, e.g.:
+#    1  B   B   B   B    B        34.946134       +0.0
+DATA_LINE = re.compile(
+    r'^\s*(\d+)\s+([BM])\s+([BM])\s+([BM])\s+([BM])\s+([BM])\s+(\S+)'
+)
+
+
+def load_doe_results(path):
+    """Read run_doe.py's DOE_MM_results.txt into the (n, 7) array the
+    analysis below expects: columns [run, x_D, x_a, x_T, x_mu, x_h, MM],
+    with B -> -1 and M -> +1.
+    """
+    if not os.path.exists(path):
+        raise FileNotFoundError(
+            "%s not found. Run 'python3 run_doe.py' first to generate "
+            "the DOE results, then re-run this script." % path
+        )
+
+    rows = []
+    with open(path, 'r') as handle:
+        for line in handle:
+            match = DATA_LINE.match(line)
+            if not match:
+                continue
+            run, e_d, e_a, e_t, e_mu, g_h, mm_text = match.groups()
+            try:
+                mm = float(mm_text)
+            except ValueError:
+                raise ValueError(
+                    "Run %s in %s has no numeric MM value (%r); every "
+                    "case must complete successfully before running the "
+                    "regression." % (run, path, mm_text)
+                )
+            rows.append([
+                int(run),
+                LEVEL_TO_CODE[e_d], LEVEL_TO_CODE[e_a],
+                LEVEL_TO_CODE[e_t], LEVEL_TO_CODE[e_mu],
+                LEVEL_TO_CODE[g_h], mm,
+            ])
+
+    if not rows:
+        raise ValueError('No DOE run rows found in %s' % path)
+
+    rows.sort(key=lambda row: row[0])
+    return np.array(rows, dtype=float)
+
+
+raw = load_doe_results(RESULTS_PATH)
 
 # Applied eta values at the M level (B level is zero for the four eta factors)
 ETA_M = np.array([0.46, 0.25, 0.25, 1.655])   # [eta_D, eta_a, eta_T, eta_mu]
 THETA_H = np.array([1.0, 2.0])                # [no hypertrophy, hypertrophy]
 
-# Coded design in Yates order: -1 = B, +1 = M.
-# Columns: run, x_D, x_a, x_T, x_mu, x_h, MM
-raw = np.array([
-    [1,  -1, -1, -1, -1, -1, 130.16],
-    [2,  +1, -1, -1, -1, -1, 128.97],
-    [3,  -1, +1, -1, -1, -1, 125.74],
-    [4,  +1, +1, -1, -1, -1, 123.32],
-    [5,  -1, -1, +1, -1, -1, 111.37],
-    [6,  +1, -1, +1, -1, -1, 110.85],
-    [7,  -1, +1, +1, -1, -1, 108.64],
-    [8,  +1, +1, +1, -1, -1, 107.38],
-    [9,  -1, -1, -1, +1, -1,  69.11],
-    [10, +1, -1, -1, +1, -1,  67.91],
-    [11, -1, +1, -1, +1, -1,  66.63],
-    [12, +1, +1, -1, +1, -1,  66.42],
-    [13, -1, -1, +1, +1, -1,  54.53],
-    [14, +1, -1, +1, +1, -1,  54.19],
-    [15, -1, +1, +1, +1, -1,  53.34],
-    [16, +1, +1, +1, +1, -1,  53.15],
-    [17, -1, -1, -1, -1, +1, 113.95],
-    [18, +1, -1, -1, -1, +1, 114.44],
-    [19, -1, +1, -1, -1, +1, 112.49],
-    [20, +1, +1, -1, -1, +1, 111.04],
-    [21, -1, -1, +1, -1, +1,  99.58],
-    [22, +1, -1, +1, -1, +1,  99.31],
-    [23, -1, +1, +1, -1, +1,  96.50],
-    [24, +1, +1, +1, -1, +1,  95.97],
-    [25, -1, -1, -1, +1, +1,  62.49],
-    [26, +1, -1, -1, +1, +1,  62.32],
-    [27, -1, +1, -1, +1, +1,  60.97],
-    [28, +1, +1, -1, +1, +1,  60.84],
-    [29, -1, -1, +1, +1, +1,  50.14],
-    [30, +1, -1, +1, +1, +1,  49.94],
-    [31, -1, +1, +1, +1, +1,  48.91],
-    [32, +1, +1, +1, +1, +1,  48.80],
-])
-
 X = raw[:, 1:6]                # coded levels, +/-1
 MM = raw[:, 6]                 # motility metric
 n = raw.shape[0]
+
+# Healthy baseline motility metric MM0 = MM of Run 1 
+BASELINE_MM = MM[0]
 
 # Percentage change from the healthy baseline
 PCT = (MM - BASELINE_MM) / BASELINE_MM * 100
