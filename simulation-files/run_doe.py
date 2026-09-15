@@ -6,7 +6,7 @@
 # Runs the two-model workflow once per DOE combination in its own working
 # directory and collects the motility metric MM into a table.
 #
-# Run:
+# Run (from simulation-files/):
 #   python3 run_doe.py                  # Model 1 references + model 2 all 32 runs
 #   python3 run_doe.py --dry-run        # prepare everything, without launching
 #   python3 run_doe.py --only run05     # runs single case
@@ -40,6 +40,8 @@ import generate_doe
 # ----------------------------------------------------------------------
 
 REPO_ROOT = os.path.dirname(os.path.abspath(__file__))
+POSTPROCESSING_DIR = os.path.join(os.path.dirname(REPO_ROOT),
+                                  'postprocessing-files')
 
 WORK_DIR = 'doe_work'
 MODEL1_SUBDIR = 'model_1'
@@ -51,7 +53,7 @@ MODEL2_JOB = 'm2'
 TRIAD_FILE = 'triad_fields.inp'
 VOLUME_CSV = 'motility_volume_cross_sections.csv'
 
-# Final DOE table, written next to run_doe.py.
+# Final DOE table, written to postprocessing-files
 SUMMARY_TXT = 'DOE_MM_results.txt'
 
 # Files every working directory needs but never modifies.  These are
@@ -609,7 +611,7 @@ def write_summary(cases):
     """Write the DOE table: factor levels, MM, and dMM relative to run01."""
     factor_names = generate_doe.factor_names()
 
-    # Run 01 (all factors at baseline) is the reference for dMM (Eq. 46).
+    # Run 01 (all factors at baseline) is the reference for dMM.
     run01 = [case for case in cases if case['name'] == 'run01']
     mm0 = run01[0]['MM'] if run01 else None
 
@@ -649,7 +651,8 @@ def write_summary(cases):
         lines.append('SKIPPED cases (never started): %s' % ', '.join(skipped))
 
     text = '\n'.join(lines) + '\n'
-    summary_path = os.path.join(REPO_ROOT, SUMMARY_TXT)
+    ensure_dir(POSTPROCESSING_DIR)
+    summary_path = os.path.join(POSTPROCESSING_DIR, SUMMARY_TXT)
     write_text(summary_path, text)
     return text, summary_path
 

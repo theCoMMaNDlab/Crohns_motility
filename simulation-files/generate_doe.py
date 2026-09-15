@@ -3,7 +3,7 @@
 # Generates the Abaqus *PARAMETER include files for the full-factorial
 # design of experiments.
 #
-# Run:
+# Run (from simulation-files/):
 #   python3 generate_doe.py            # write doe_params/eta_params_runNN.inp
 #   python3 generate_doe.py --check    # verify existing files match, write nothing
 #

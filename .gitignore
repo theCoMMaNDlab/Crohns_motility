@@ -31,6 +31,12 @@ triad_fields.inp
 motility_volume_cross_sections.csv
 cycle_volume.txt
 
+# tune_fiber_stiffness.py output.
+passive-calibration/best_fit_parameters.txt
+passive-calibration/sequential_fit_metrics.txt
+passive-calibration/circum_python_fit*
+passive-calibration/long_python_fit*
+
 # Python
 __pycache__/
 *.pyc

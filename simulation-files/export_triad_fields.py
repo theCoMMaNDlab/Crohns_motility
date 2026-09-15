@@ -64,6 +64,7 @@ def cross(a, b):
 
 
 def unit(vector, fallback=None):
+    # Returns the unit vector of v as a tuple
     vector_norm = norm(vector)
     if vector_norm < 1.0e-14:
         if fallback is None:
@@ -147,6 +148,8 @@ def get_nset_instance_and_labels(root_assembly, nset_name):
 
 
 def collect_deformed_coords(root_assembly, frame, labels_by_instance):
+    # Extract nodal displacement fields ('U') to compute deformed 
+    # coordinates.
     deformed_coords = {}
     displacement_field = frame.fieldOutputs["U"]
 
@@ -175,6 +178,7 @@ def collect_deformed_coords(root_assembly, frame, labels_by_instance):
 
 def collect_scalar_field(root_assembly, frame, labels_by_instance,
                          field_name):
+    # Extract a specified nodal scalar field from the given frame.
     if field_name not in frame.fieldOutputs:
         raise RuntimeError("Field '{}' not found in last frame.".format(
             field_name
