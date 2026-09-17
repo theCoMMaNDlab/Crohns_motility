@@ -103,9 +103,9 @@ This reads the last frame of `m1.odb` and writes `triad_fields.inp` containing 1
 | Variable | Field                              |
 | -------- | ---------------------------------- |
 | 1        | Fibrosis scalar *m*                |
-| 2–4      | Radial unit vector **eᵣ**          |
+| 2–4      | Radial unit vector **er**          |
 | 5–7      | Circumferential unit vector **eθ** |
-| 8–10     | Axial unit vector **e_z**          |
+| 8–10     | Axial unit vector **ez**          |
 
 ### Step 3 — Run Model 2 (electromechanics)
 
