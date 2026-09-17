@@ -22,7 +22,7 @@
 1
 ** 1 THETA_H : Radial growth multiplier theta_h (-)
 *USER MATERIAL, TYPE=MECHANICAL, CONSTANTS=6, UNSYMM
-0.64, 210.0, 1900.0, 0.69, 100.0, 1.0
+0.64, 29.66, 333.22, 0.69, 100.0, 1.0
 ** PROPS (MECHANICAL):
 ** 1 MU0          : Initial shear modulus mu_0 (kPa)
 ** 2 K_C          : Circumferential fiber stiffness k_c (kPa)
