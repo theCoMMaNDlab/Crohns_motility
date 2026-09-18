@@ -27,7 +27,7 @@ Stage 3   Consistency check. Stage 1 is repeated using the Stage 2
 MATERIAL MODEL
 --------------
 Strain energy (compressible neo-Hookean matrix plus two tension-only
-fibre families with a cubic engagement law):
+fiber families with a cubic engagement law):
 
     W = (mu0/2)(I1 - 3) - mu0*ln(J) + (kappa/2)(ln J)^2
       + (k_c/2) <I4c - 1>^3
@@ -41,7 +41,7 @@ Cauchy stress:
           + (3*k_c/J) I4c <I4c - 1>^2 (e_c (x) e_c)
           + (3*k_l/J) I4l <I4l - 1>^2 (e_l (x) e_l)
 
-Fibre 2 (e2) is circumferential, fibre 3 (e3) is longitudinal.
+Fiber 2 (e2) is circumferential, fiber 3 (e3) is longitudinal.
 The model is exactly stress-free at F = I.
 
 
@@ -122,10 +122,10 @@ CONSISTENCY_TOLERANCE = 1.0e-6
 KAPPA_B = KAPPA_FACTOR * MU0_FIXED
 
 # Stiffness governing the lateral equilibrium equations, used to
-# normalise the lateral residuals.
+# normalize the lateral residuals.
 #
 # This must NOT be scaled by k_c or k_l: those can reach 1e8 under the
-# bounds above, and dividing by them drives the normalised residual
+# bounds above, and dividing by them drives the normalized residual
 # gradient below gtol, so the solver stops on its initial guess and
 # silently returns a state that is not in equilibrium.
 MATRIX_SCALE = MU0_FIXED + KAPPA_B
@@ -232,8 +232,8 @@ def cauchy_stress(F, kf_circ, kf_long):
     Parameters
     ----------
     F        3x3 deformation gradient
-    kf_circ  circumferential fibre stiffness k_c
-    kf_long  longitudinal fibre stiffness k_l
+    kf_circ  circumferential fiber stiffness k_c
+    kf_long  longitudinal fiber stiffness k_l
 
     Returns
     -------
@@ -256,22 +256,22 @@ def cauchy_stress(F, kf_circ, kf_long):
     p_scalar = KAPPA_B * logJ - MU0_FIXED
     sigma = (MU0_FIXED / J) * B + (p_scalar / J) * np.eye(3)
 
-    # Fibre contributions. e2 = circumferential, e3 = longitudinal.
-    fibres = (
+    # fiber contributions. e2 = circumferential, e3 = longitudinal.
+    fibers = (
         (np.array([0.0, 1.0, 0.0]), kf_circ),
         (np.array([0.0, 0.0, 1.0]), kf_long),
     )
 
-    for direction_ref, kf in fibres:
+    for direction_ref, kf in fibers:
 
-        # Push the fibre forward and extract its stretch.
+        # Push the fiber forward and extract its stretch.
         a = F @ direction_ref
         lam = max(float(np.linalg.norm(a)), 1.0e-12)
         e = a / lam
 
         i4 = lam ** 2
 
-        # Tension-only: a compressed fibre carries no stress.
+        # Tension-only: a compressed fiber carries no stress.
         bracket = max(i4 - 1.0, 0.0)
 
         if bracket > 0.0:
@@ -282,7 +282,7 @@ def cauchy_stress(F, kf_circ, kf_long):
     return sigma
 
 
-def fibre_stretches(F):
+def fiber_stretches(F):
     """Return (lambda_circ, lambda_long) for a deformation gradient."""
 
     F = np.asarray(F, dtype=float).reshape(3, 3)
@@ -326,7 +326,7 @@ def solve_uniaxial_state(
     lateral_1        first solved lateral stretch
     lateral_2        second solved lateral stretch
     J                det(F)
-    equilibrium_err  max|sigma_lateral| normalised by the local stress
+    equilibrium_err  max|sigma_lateral| normalized by the local stress
                      scale; should be ~1e-12 or smaller
     """
 
@@ -352,7 +352,7 @@ def solve_uniaxial_state(
         lateral_guess = np.asarray(lateral_guess, dtype=float)
 
     def residual(log_lateral):
-        """Normalised [sigma_lat_a, sigma_lat_b]."""
+        """Normalized [sigma_lat_a, sigma_lat_b]."""
         lateral = np.exp(log_lateral)
         sigma = cauchy_stress(_build_F(lam, lateral, config), kf_circ, kf_long)
         return np.array([sigma[i_lat_a, i_lat_a],
@@ -484,12 +484,12 @@ def fit_one_direction(
         stretch, stress, direction,
         initial_kf, other_kf, verbose=True):
     """
-    Tune the fibre stiffness belonging to one direction.
+    Tune the fiber stiffness belonging to one direction.
 
     'circum' tunes KF_CIRC with KF_LONG held at other_kf.
     'long'   tunes KF_LONG with KF_CIRC held at other_kf.
 
-    Optimisation is over log(k), which enforces positivity and makes the
+    Optimization is over log(k), which enforces positivity and makes the
     step size scale-free across the very wide bounds.
 
     Returns
@@ -503,9 +503,8 @@ def fit_one_direction(
         )
 
     tuned_name = "KF_CIRC" if direction == "circum" else "KF_LONG"
-    fixed_name = "KF_LONG" if direction == "circum" else "KF_CIRC"
 
-    # Residuals are normalised by the peak measured stress so the
+    # Residuals are normalized by the peak measured stress so the
     # convergence tolerances mean the same thing for both datasets.
     scale = max(float(np.max(np.abs(stress))), 1.0)
 
@@ -547,9 +546,9 @@ def fit_one_direction(
     return float(np.exp(result.x[0])), result, evaluations[0]
 
 
-def off_axis_fibre_activates(stretch, lateral_1, lateral_2, direction):
+def off_axis_fiber_activates(stretch, lateral_1, lateral_2, direction):
     """
-    Report whether the fibre family NOT aligned with the loading axis
+    Report whether the fiber family NOT aligned with the loading axis
     ever goes into tension.
 
     If it never does, that family contributes no stress to this test, so
@@ -560,7 +559,7 @@ def off_axis_fibre_activates(stretch, lateral_1, lateral_2, direction):
 
     for i in range(len(stretch)):
         F = _build_F(stretch[i], (lateral_1[i], lateral_2[i]), config)
-        lam_c, lam_l = fibre_stretches(F)
+        lam_c, lam_l = fiber_stretches(F)
         off_axis = lam_l if direction == "circum" else lam_c
         if off_axis > 1.0:
             return True
@@ -720,7 +719,7 @@ def main(show_plots=True):
         "circum", stretch_c, stress_c, fit_c, lat1_c, lat2_c, J_c
     )
 
-    long_fibre_active = off_axis_fibre_activates(
+    long_fiber_active = off_axis_fiber_activates(
         stretch_c, lat1_c, lat2_c, "circum"
     )
 
@@ -733,16 +732,16 @@ def main(show_plots=True):
     print(f"  NRMSE = {nrmse_c:.10f}")
     print(f"  R^2   = {r2_c:.10f}")
     print("")
-    print(f"  Optimiser success    = {result_c.success}")
+    print(f"  Optimizer success    = {result_c.success}")
     print(f"  Residual evaluations = {evals_c}")
     print(f"  Lateral equilibrium  = {err_c:.3e}")
     print(f"  J range              = {J_c.min():.6f} to {J_c.max():.6f}")
     print(
-        "  Longitudinal fibre   = "
+        "  Longitudinal fiber   = "
         + (
             "IN TENSION somewhere, so the KF_LONG placeholder "
             "influenced this result"
-            if long_fibre_active
+            if long_fiber_active
             else "in compression throughout, so KF_LONG had no "
                  "influence on this result"
         )
@@ -775,7 +774,7 @@ def main(show_plots=True):
         "long", stretch_l, stress_l, fit_l, lat1_l, lat2_l, J_l
     )
 
-    circ_fibre_active = off_axis_fibre_activates(
+    circ_fiber_active = off_axis_fiber_activates(
         stretch_l, lat1_l, lat2_l, "long"
     )
 
@@ -788,15 +787,15 @@ def main(show_plots=True):
     print(f"  NRMSE = {nrmse_l:.10f}")
     print(f"  R^2   = {r2_l:.10f}")
     print("")
-    print(f"  Optimiser success    = {result_l.success}")
+    print(f"  Optimizer success    = {result_l.success}")
     print(f"  Residual evaluations = {evals_l}")
     print(f"  Lateral equilibrium  = {err_l:.3e}")
     print(f"  J range              = {J_l.min():.6f} to {J_l.max():.6f}")
     print(
-        "  Circumferential fibre = "
+        "  Circumferential fiber = "
         + (
             "IN TENSION somewhere, so KF_CIRC influenced this result"
-            if circ_fibre_active
+            if circ_fiber_active
             else "in compression throughout, so KF_CIRC had no "
                  "influence on this result"
         )
