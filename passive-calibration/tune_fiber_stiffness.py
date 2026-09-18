@@ -87,7 +87,7 @@ KF_LONG_INITIAL = 50.0
 KF_LONG_PLACEHOLDER = KF_LONG_INITIAL
 
 # Matrix parameters are held fixed throughout.
-MU0_FIXED = 0.64
+mu0 = 0.64
 KAPPA_FACTOR = 100.0
 
 # Optional baseline subtraction, applied to each dataset separately.
@@ -119,7 +119,7 @@ CONSISTENCY_TOLERANCE = 1.0e-6
 # DERIVED CONSTANTS
 # =====================================================================
 
-KAPPA_B = KAPPA_FACTOR * MU0_FIXED
+kappa_b = KAPPA_FACTOR * mu0
 
 # Stiffness governing the lateral equilibrium equations, used to
 # normalize the lateral residuals.
@@ -128,7 +128,7 @@ KAPPA_B = KAPPA_FACTOR * MU0_FIXED
 # bounds above, and dividing by them drives the normalized residual
 # gradient below gtol, so the solver stops on its initial guess and
 # silently returns a state that is not in equilibrium.
-MATRIX_SCALE = MU0_FIXED + KAPPA_B
+MATRIX_SCALE = mu0 + kappa_b
 
 # Per-direction configuration, replacing branched 'circum'/'long' logic.
 #
@@ -168,9 +168,6 @@ try:
 except NameError:
     # Interactive session: fall back to the working directory.
     SCRIPT_DIRECTORY = Path.cwd()
-
-CIRCUM_PATH = SCRIPT_DIRECTORY / CIRCUM_FILE
-LONG_PATH = SCRIPT_DIRECTORY / LONG_FILE
 
 
 # =====================================================================
@@ -225,7 +222,7 @@ def read_experimental_data(path):
 # CAUCHY STRESS
 # =====================================================================
 
-def cauchy_stress(F, kf_circ, kf_long):
+def cauchy_stress(F, kf_circ, kf_long, mu0, kappa_b):
     """
     Cauchy stress for a given deformation gradient.
 
@@ -234,6 +231,8 @@ def cauchy_stress(F, kf_circ, kf_long):
     F        3x3 deformation gradient
     kf_circ  circumferential fiber stiffness k_c
     kf_long  longitudinal fiber stiffness k_l
+    mu0      matrix shear modulus
+    kappa_b  matrix bulk modulus
 
     Returns
     -------
@@ -253,8 +252,8 @@ def cauchy_stress(F, kf_circ, kf_long):
 
     # Matrix contribution. At F = I this gives mu0*I - mu0*I = 0, so the
     # reference state is stress-free.
-    p_scalar = KAPPA_B * logJ - MU0_FIXED
-    sigma = (MU0_FIXED / J) * B + (p_scalar / J) * np.eye(3)
+    p_scalar = kappa_b * logJ - mu0
+    sigma = (mu0 / J) * B + (p_scalar / J) * np.eye(3)
 
     # fiber contributions. e2 = circumferential, e3 = longitudinal.
     fibers = (
@@ -313,6 +312,8 @@ def solve_uniaxial_state(
         direction,
         kf_circ,
         kf_long,
+        mu0,
+        kappa_b,
         lateral_guess=None):
     """
     Solve for the lateral stretches that make both traction-free faces
@@ -354,7 +355,10 @@ def solve_uniaxial_state(
     def residual(log_lateral):
         """Normalized [sigma_lat_a, sigma_lat_b]."""
         lateral = np.exp(log_lateral)
-        sigma = cauchy_stress(_build_F(lam, lateral, config), kf_circ, kf_long)
+        sigma = cauchy_stress(
+            _build_F(lam, lateral, config), kf_circ, kf_long,
+            mu0=mu0, kappa_b=kappa_b,
+        )
         return np.array([sigma[i_lat_a, i_lat_a],
                          sigma[i_lat_b, i_lat_b]]) / MATRIX_SCALE
 
@@ -380,7 +384,7 @@ def solve_uniaxial_state(
 
         lateral = np.exp(solution.x)
         F = _build_F(lam, lateral, config)
-        sigma = cauchy_stress(F, kf_circ, kf_long)
+        sigma = cauchy_stress(F, kf_circ, kf_long, mu0=mu0, kappa_b=kappa_b)
 
         lateral_stress = max(
             abs(sigma[i_lat_a, i_lat_a]),
@@ -415,7 +419,8 @@ def solve_uniaxial_state(
 # CALCULATE COMPLETE CURVE
 # =====================================================================
 
-def calculate_model_curve(stretches, direction, kf_circ, kf_long):
+def calculate_model_curve(stretches, direction, kf_circ, kf_long,
+                          mu0, kappa_b):
     """
     Sweep a stretch list and return the full uniaxial response.
 
@@ -441,7 +446,9 @@ def calculate_model_curve(stretches, direction, kf_circ, kf_long):
     for i, stretch in enumerate(stretches):
 
         axial_stress, lat1, lat2, J, err = solve_uniaxial_state(
-            stretch, direction, kf_circ, kf_long, previous_lateral
+            stretch, direction, kf_circ, kf_long,
+            mu0=mu0, kappa_b=kappa_b,
+            lateral_guess=previous_lateral,
         )
 
         stresses[i] = axial_stress
@@ -482,7 +489,8 @@ def calculate_metrics(experimental, predicted):
 
 def fit_one_direction(
         stretch, stress, direction,
-        initial_kf, other_kf, verbose=True):
+        initial_kf, other_kf, mu0, kappa_b,
+        verbose=True):
     """
     Tune the fiber stiffness belonging to one direction.
 
@@ -518,7 +526,8 @@ def fit_one_direction(
         )
 
         model, _, _, _, _ = calculate_model_curve(
-            stretch, direction, kf_circ, kf_long
+            stretch, direction, kf_circ, kf_long,
+            mu0=mu0, kappa_b=kappa_b,
         )
 
         evaluations[0] += 1
@@ -657,6 +666,11 @@ def make_plot(direction, stretch, stress_exp, stress_fit, show=True):
 
 def main(show_plots=True):
 
+    # Derived from the USER SETTINGS above. Used only inside this
+    # function, so they are locals rather than module-level names.
+    CIRCUM_PATH = SCRIPT_DIRECTORY / CIRCUM_FILE
+    LONG_PATH = SCRIPT_DIRECTORY / LONG_FILE
+
     print("")
     print("============================================================")
     print("SEQUENTIAL CALIBRATION:  CIRCUMFERENTIAL, THEN LONGITUDINAL")
@@ -674,8 +688,8 @@ def main(show_plots=True):
     print(f"Longitudinal points    : {len(stretch_l)}")
     print("")
     print("Fixed matrix parameters:")
-    print(f"  MU0     = {MU0_FIXED:.8f}")
-    print(f"  KAPPA_B = {KAPPA_B:.8f}")
+    print(f"  MU0     = {mu0:.8f}")
+    print(f"  KAPPA_B = {kappa_b:.8f}")
 
     # The model is stress-free at lambda = 1, so a non-zero first data
     # point leaves a residual that tuning cannot remove.
@@ -709,10 +723,12 @@ def main(show_plots=True):
         stretch_c, stress_c, "circum",
         initial_kf=KF_CIRC_INITIAL,
         other_kf=KF_LONG_PLACEHOLDER,
+        mu0=mu0, kappa_b=kappa_b,
     )
 
     fit_c, lat1_c, lat2_c, J_c, err_c = calculate_model_curve(
-        stretch_c, "circum", kf_circ_best, KF_LONG_PLACEHOLDER
+        stretch_c, "circum", kf_circ_best, KF_LONG_PLACEHOLDER,
+        mu0=mu0, kappa_b=kappa_b,
     )
 
     rmse_c, nrmse_c, r2_c = save_direction_results(
@@ -764,10 +780,12 @@ def main(show_plots=True):
         stretch_l, stress_l, "long",
         initial_kf=KF_LONG_INITIAL,
         other_kf=kf_circ_best,
+        mu0=mu0, kappa_b=kappa_b,
     )
 
     fit_l, lat1_l, lat2_l, J_l, err_l = calculate_model_curve(
-        stretch_l, "long", kf_circ_best, kf_long_best
+        stretch_l, "long", kf_circ_best, kf_long_best,
+        mu0=mu0, kappa_b=kappa_b,
     )
 
     rmse_l, nrmse_l, r2_l = save_direction_results(
@@ -822,6 +840,7 @@ def main(show_plots=True):
         initial_kf=kf_circ_best,
         other_kf=kf_long_best,
         verbose=False,
+        mu0=mu0, kappa_b=kappa_b,
     )
 
     drift = abs(kf_circ_recheck - kf_circ_best) / max(abs(kf_circ_best), 1e-30)
@@ -847,8 +866,8 @@ def main(show_plots=True):
     with open(SCRIPT_DIRECTORY / "best_fit_parameters.txt", "w") as f:
         f.write(f"KF_CIRC {kf_circ_best:.12f}\n")
         f.write(f"KF_LONG {kf_long_best:.12f}\n")
-        f.write(f"MU0 {MU0_FIXED:.12f}\n")
-        f.write(f"KAPPA_B {KAPPA_B:.12f}\n")
+        f.write(f"MU0 {mu0:.12f}\n")
+        f.write(f"KAPPA_B {kappa_b:.12f}\n")
         f.write("FIT_MODE sequential_circum_then_long\n")
         f.write(f"STAGE1_SUCCESS {result_c.success}\n")
         f.write(f"STAGE2_SUCCESS {result_l.success}\n")
@@ -875,8 +894,8 @@ def main(show_plots=True):
     print("")
     print(f"  KF_CIRC = {kf_circ_best:.10f}   (Stage 1, circumferential)")
     print(f"  KF_LONG = {kf_long_best:.10f}   (Stage 2, longitudinal)")
-    print(f"  MU0     = {MU0_FIXED:.10f}   (fixed)")
-    print(f"  KAPPA_B = {KAPPA_B:.10f}   (fixed)")
+    print(f"  MU0     = {mu0:.10f}   (fixed)")
+    print(f"  KAPPA_B = {kappa_b:.10f}   (fixed)")
     print("")
     print(f"  Circumferential   R^2 = {r2_c:.10f}   RMSE = {rmse_c:.6f}")
     print(f"  Longitudinal      R^2 = {r2_l:.10f}   RMSE = {rmse_l:.6f}")
