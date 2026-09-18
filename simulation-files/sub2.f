@@ -23,6 +23,7 @@ C ============================================================
      1 COORDS(3),PNEWDT
 
       DOUBLE PRECISION PHI,C_PHI,D_0,D_EFF,M,ETA_D
+      DOUBLE PRECISION ZERO,ONE
 C
 C PHI is the normalized electrical potential.
 C M is the imported fibrosis field from Model 1.
@@ -30,18 +31,20 @@ C C_PHI, D_0, and ETA_D define c_phi and d_eff.
 C     Symbol names follow the manuscript equations where possible.
       INTEGER I1,I2
 
+      PARAMETER (ZERO=0.D0, ONE=1.D0)
+
 
 
 C Current electrical potential phi and imported fibrosis scalar m.
-      PHI     = TEMP + DTEMP
-      M       = PREDEF(1)
-      C_PHI   = PROPS(1)
-      D_0      = PROPS(2)
+      PHI   = TEMP + DTEMP
+      M     = PREDEF(1)
+      C_PHI = PROPS(1)
+      D_0   = PROPS(2)
       ETA_D = PROPS(3)
 
 
 C Effective diffusivity: d_eff = d_0 (1 - eta_D m).
-      D_EFF = D_0*(1.D0 - ETA_D*M)
+      D_EFF = D_0*(ONE - ETA_D*M)
 
 
 C Storage term: U = c_phi phi, with tangent dU/dphi = c_phi.
@@ -49,13 +52,13 @@ C Storage term: U = c_phi phi, with tangent dU/dphi = c_phi.
       DUDT = C_PHI
 
       DO I1=1,NTGRD
-         DUDG(I1) = 0.D0
+         DUDG(I1) = ZERO
 
 C Electrical flux: q = -d_eff grad(phi).
          FLUX(I1) = -D_EFF*DTEMDX(I1)
-         DFDT(I1) = 0.D0
+         DFDT(I1) = ZERO
          DO I2=1,NTGRD
-            DFDG(I1,I2) = 0.D0
+            DFDG(I1,I2) = ZERO
          END DO
          DFDG(I1,I1) = -D_EFF
       END DO
@@ -131,9 +134,9 @@ C   STATEV(10:12) = e_r components
       DOUBLE PRECISION MU,KAPPA,KAPPA_FAC
       DOUBLE PRECISION F(3,3),F_E(3,3),F_H_INV(3,3)
       DOUBLE PRECISION B_LEFT_CG(3,3),IDENT(3,3)
-      DOUBLE PRECISION SIGMA_PAS(3,3),SIGMA_ACT(3,3),SIGMA(3,3)
+      DOUBLE PRECISION SIGMA_ISO(3,3),SIGMA_ACT(3,3),SIGMA(3,3)
       DOUBLE PRECISION SIGMA_C(3,3),SIGMA_L(3,3)
-      DOUBLE PRECISION C_PAS(3,3,3,3),C_ACT(3,3,3,3),C_TOTAL(3,3,3,3)
+      DOUBLE PRECISION C_ISO(3,3,3,3),C_ACT(3,3,3,3),C_TOTAL(3,3,3,3)
       DOUBLE PRECISION C_C(3,3,3,3),C_L(3,3,3,3)
       DOUBLE PRECISION C_GEOM(3,3,3,3)
       DOUBLE PRECISION J,LOG_J,PRESSURE_TERM
@@ -205,42 +208,44 @@ C Normalize imported basis vectors before using them in tensor operations.
 
 
 C Retrieve history variables from the previous increment.
-      W_OLD    = ZERO
+      W_OLD     = ZERO
       T_ACT_OLD = ZERO
-      IF (NSTATV .GE. 1) W_OLD    = STATEV(1)
+      IF (NSTATV .GE. 1) W_OLD     = STATEV(1)
       IF (NSTATV .GE. 2) T_ACT_OLD = STATEV(2)
 
 
 
 C Read FHN, active-stress, passive-mechanics, and disease parameters.
-      KAPPA_FHN          = PROPS(1)
-      A_0 = PROPS(2)
-      B_PARAM          = PROPS(3)
-      C_PARAM          = PROPS(4)
+      KAPPA_FHN      = PROPS(1)
+      A_0            = PROPS(2)
+      B_PARAM        = PROPS(3)
+      C_PARAM        = PROPS(4)
       PHI_R          = PROPS(5)
-      PHI_OFF     = PROPS(6)
-      A_SW          = PROPS(7)
+      PHI_OFF        = PROPS(6)
+      A_SW           = PROPS(7)
       PHI_TH         = PROPS(8)
       DELTA_S        = PROPS(9)
       T0             = PROPS(10)
       TAU_T          = PROPS(11)
-      MU_0            = PROPS(12)
+      MU_0           = PROPS(12)
       EPSILON_0      = PROPS(13)
-      EPSILON_Z = PROPS(14)
-      K_C        = PROPS(15)
-      K_L        = PROPS(16)
-      EPSILON_LAMBDA    = PROPS(17)
+      EPSILON_Z      = PROPS(14)
+      K_C            = PROPS(15)
+      K_L            = PROPS(16)
+      EPSILON_LAMBDA = PROPS(17)
       ETA_MU         = PROPS(18)
-      ETA_T       = PROPS(19)
+      ETA_T          = PROPS(19)
       ETA_A          = PROPS(20)
+      KAPPA_FAC      = PROPS(21)
 
 
 C Disease-dependent constitutive parameters.
-      MU      = MU_0*(ONE + ETA_MU*M)
-C Bulk modulus is hardcoded at 100x the shear modulus to enforce
-C near-incompressibility.
-      KAPPA = 100.D0*MU
-      T_MAX  = T0*(ONE - ETA_T*M)
+      MU       = MU_0*(ONE + ETA_MU*M)
+C Bulk modulus is kappa_fac times the shear modulus, enforcing
+C near-incompressibility.  kappa_fac is supplied through PROPS(21),
+C matching the way Model 1 passes it in m1.inp.
+      KAPPA    = KAPPA_FAC*MU
+      T_MAX    = T0*(ONE - ETA_T*M)
       A_THRESH = A_0*(ONE - ETA_A*M)
 
 
@@ -248,10 +253,10 @@ C Model 2 has no additional growth, so F_h^{-1} is the identity
 C and the elastic deformation gradient equals the total gradient.
       DO I1=1,3
          DO I2=1,3
-            F(I1,I2)     = DFGRD1(I1,I2)
-            F_E(I1,I2)    = ZERO
-            IDENT(I1,I2) = ZERO
-            B_LEFT_CG(I1,I2)  = ZERO
+            F(I1,I2)         = DFGRD1(I1,I2)
+            F_E(I1,I2)       = ZERO
+            IDENT(I1,I2)     = ZERO
+            B_LEFT_CG(I1,I2) = ZERO
          END DO
          IDENT(I1,I1) = ONE
       END DO
@@ -369,7 +374,7 @@ C First-order active tension update and its phi derivative.
 C DT_TAU caches DTIME/TAU_T so the ratio is formed once, not four times.
       DT_TAU       = DTIME/TAU_T
       T_ACT_TARGET = T_MAX*A_GATE
-      T_ACT_NEW = ( T_ACT_OLD + DT_TAU*T_ACT_TARGET )
+      T_ACT_NEW    = ( T_ACT_OLD + DT_TAU*T_ACT_TARGET )
      1         / ( ONE + DT_TAU )
 
       D_T_ACT_D_PHI = ( ONE/(ONE + DT_TAU) )
@@ -401,9 +406,9 @@ C Passive stress: compressible neo-Hookean matrix plus tension-only fibers.
 
       DO I1=1,3
          DO I2=1,3
-            SIGMA_PAS(I1,I2) = (MU/J)*B_LEFT_CG(I1,I2)
+            SIGMA_ISO(I1,I2) = (MU/J)*B_LEFT_CG(I1,I2)
          END DO
-         SIGMA_PAS(I1,I1) = SIGMA_PAS(I1,I1) + (PRESSURE_TERM/J)
+         SIGMA_ISO(I1,I1) = SIGMA_ISO(I1,I1) + (PRESSURE_TERM/J)
       END DO
 
 
@@ -431,7 +436,7 @@ C Active Cauchy stress acts along the current circumferential direction.
          DO I2=1,3
             SIGMA_ACT(I1,I2) = T_ACT_NEW*N_C_CUR(I1)*N_C_CUR(I2)
 
-            SIGMA(I1,I2) = SIGMA_PAS(I1,I2)
+            SIGMA(I1,I2) = SIGMA_ISO(I1,I2)
      1                       + SIGMA_C(I1,I2)
      2                       + SIGMA_L(I1,I2)
      3                       + SIGMA_ACT(I1,I2)
@@ -449,7 +454,7 @@ C Assemble passive, active, and geometric tangent contributions.
             DO I3=1,3
                DO I4=1,3
 
-                  C_PAS(I1,I2,I3,I4) =
+                  C_ISO(I1,I2,I3,I4) =
      1              (KAPPA/J)*IDENT(I1,I2)*IDENT(I3,I4)
      2            - (PRESSURE_TERM/J)*
      3              ( IDENT(I1,I3)*IDENT(I2,I4)
@@ -480,7 +485,7 @@ C Assemble passive, active, and geometric tangent contributions.
      5            + IDENT(I2,I4)*SIGMA(I1,I3) )
 
                   C_TOTAL(I1,I2,I3,I4) =
-     1               C_PAS(I1,I2,I3,I4)
+     1               C_ISO(I1,I2,I3,I4)
      2             + C_C(I1,I2,I3,I4)
      3             + C_L(I1,I2,I3,I4)
      4             + C_ACT(I1,I2,I3,I4)

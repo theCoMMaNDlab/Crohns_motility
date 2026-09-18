@@ -1,13 +1,23 @@
-** change this for different doe runs
-*INCLUDE, INPUT=../doe_params/eta_params_run01.inp
 *HEADING
-** Step 2A: working electromechanics model + imported geometry + imported triad field
+** Model 2: three-dimensional electromechanical framework
+** Imported geometry + imported triad field
+** Units: Length - mm, Time - s, Stress - kPa, Potential - mV
+** author: Ahilan Anantha Krishnan
+** contributor: Masah Abubaker
+**
 ** TEMP = phi
 ** PREDEF(1) = fibrosis field m
 ** PREDEF(2:4) = e_r
 ** PREDEF(5:7) = e_theta
 ** PREDEF(8:10) = e_z
 ** Imported triad is used as the Step 2 reference basis
+** Baseline eta values for a manual (non-DOE) run.  run_doe.py replaces
+** this block with an *INCLUDE of the case's own eta_params.inp.
+*PARAMETER
+eta_D  = 0.0
+eta_a  = 0.0
+eta_T  = 0.0
+eta_mu = 0.0
 *PREPRINT, ECHO=YES, MODEL=YES, HISTORY=YES
 *IMPORT, STEP=1, UPDATE=YES, STATE=NO
 ILEUM
@@ -38,36 +48,36 @@ INNER_SURFACE
 ** 10 ER_X
 ** 11 ER_Y
 ** 12 ER_Z
-*USER MATERIAL, TYPE=MECHANICAL, CONSTANTS=20,UNSYMM
+*USER MATERIAL, TYPE=MECHANICAL, CONSTANTS=21,UNSYMM
 7.0, 0.5, 8.0, 0.5, -60.0, 13.0, 7.8, -40.0,
-0.6, 2.0, 0.5, 0.64, 0.15, -0.00004, 210, 1900,
-0.104, <eta_mu>, <eta_T>, <eta_a>
-** 1  KAPPA_FHN
-** 2  A0_FHN
-** 3  B_FHN
-** 4  C_FHN
-** 5  PHI_R
-** 6  PHI_OFFSET
-** 7  A_SW0
-** 8  PHI_TH
-** 9  DELTA_S
-** 10 T0
-** 11 TAU_T
-** 12 MU0
-** 13 EPSILON_0
-** 14 EPSILON_Z
-** 15 KF_CIRC
-** 16 KF_LONG
-** 17 EPSILON_LAMBDA
-** 18 ETA_MU
-** 19 ETA_T
-** 20 ETA_A
-*USER MATERIAL, TYPE=THERMAL, CONSTANTS=4
-1.0, 20.0, 0.0, <eta_D>
-** 1 C_PHI
-** 2 D0
-** 3 (unused)
-** 4 ETA_D
+0.6, 0.35, 0.5, 0.64, 0.15, -0.00004, 29.66, 333.22,
+0.104, <eta_mu>, <eta_T>, <eta_a>, 100.0
+** 1  KAPPA_FHN (1/s)
+** 2  A0_FHN (-)
+** 3  B_FHN (1/s)
+** 4  C_FHN (-)
+** 5  PHI_R (mV)
+** 6  PHI_OFF (mV)
+** 7  A_SW (mV)
+** 8  PHI_TH (mV)
+** 9  DELTA_S (mV)
+** 10 T0 (kPa)
+** 11 TAU_T (s)
+** 12 MU_0 (kPa)
+** 13 EPSILON_0 (1/s)
+** 14 EPSILON_Z (1/(mm*s))
+** 15 K_C (kPa)
+** 16 K_L (kPa)
+** 17 EPSILON_LAMBDA (1/s)
+** 18 ETA_MU (-)
+** 19 ETA_T (-)
+** 20 ETA_A (-)
+** 21 KAPPA_FAC : Bulk-to-shear modulus ratio kappa_fac (-)
+*USER MATERIAL, TYPE=THERMAL, CONSTANTS=3
+1.0, 20.0, <eta_D>
+** 1 C_PHI (-)
+** 2 D0 (mm^2/s)
+** 3 ETA_D (-)
 *SOLID SECTION, ELSET=ILEUM, MATERIAL=SMCICC
 *INITIAL CONDITIONS, TYPE=TEMPERATURE
 ALL_NODES, 0.0
@@ -75,7 +85,7 @@ ALL_NODES, 0.0
 ILEUM, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
 0.0, 0.0, 0.0, 0.0, 0.0
 *STEP, NLGEOM=YES, INC=100000
-*COUPLED TEMPERATURE-DISPLACEMENT
+*COUPLED TEMPERATURE-DISPLACEMENT, STABILIZE
 0.10, 180.0, 1.0E-06, 0.10
 *Controls, parameters=time incrementation
 , , , , , , , 10, , , , ,
